@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import HomeDashboard from './features/home/HomeDashboard.jsx';
-import WorkspaceTabs from './layouts/WorkspaceTabs.jsx';
+import WorkspaceBreadcrumbHeader from './layouts/WorkspaceBreadcrumbHeader.jsx';
 import {demoClients,getStatus,makeCase,DOCUMENT_TYPES,uid} from './data.js';
 const STORE='career-advisor-cms-synthetic-v01';
 const load=()=>{try{const saved=JSON.parse(localStorage.getItem(STORE));if(!Array.isArray(saved))return demoClients;const known=new Set(saved.map(c=>c.id));return [...saved,...demoClients.filter(c=>!known.has(c.id))]}catch{return demoClients}};
@@ -18,8 +18,6 @@ const[caseId,setCaseId]=useState('case-201');
 const[query,setQuery]=useState('');
 const[clientListFilter,setClientListFilter]=useState('All');
 const[sidebarCollapsed,setSidebarCollapsed]=useState(false);
-const[tabs,setTabs]=useState([{id:'Home',title:'Home',screen:'Home'}]);
-const[activeTab,setActiveTab]=useState('Home');
 const[editing,setEditing]=useState(false);
 const[profile,setProfile]=useState({});
 const[modal,setModal]=useState('');
@@ -29,7 +27,6 @@ const[followIndex,setFollowIndex]=useState(0);
 const[documentName,setDocumentName]=useState('');
 const[message,setMessage]=useState('');
 useEffect(()=>localStorage.setItem(STORE,JSON.stringify(clients)),[clients]);
-useEffect(()=>{const id=screen==='Client Detail'?'client:'+clientId:screen==='Case Detail'?'case:'+caseId:screen==='Form Editor'?'form:'+caseId:screen;const title=screen==='Client Detail'?clients.find(c=>c.id===clientId)?.name||'Client':screen==='Case Detail'?(clients.flatMap(c=>c.cases).find(c=>c.id===caseId)?.form||'201')+' Case':screen==='Form Editor'?'Form Editor':screen;setTabs(t=>t.some(x=>x.id===id)?t.map(x=>x.id===id?{...x,title}:x):[...t,{id,title,screen,clientId,caseId}]);setActiveTab(id)},[screen,clientId,caseId,clients]);
 const client=clients.find(c=>c.id===clientId)||clients[0];
 const current=client.cases.find(c=>c.id===caseId);
 const ready=clients.filter(c=>c.status==='Ready for Enroll');
@@ -45,10 +42,27 @@ const saveExit=()=>{if(!fields.date){flash('Exit date required');return}changeCa
 const saveFollow=()=>{if(!fields.date){flash('Date required');return}changeCase(c=>({...c,followups:[...c.followups,{date:fields.date,note:fields.note||'',file:''}]}));setModal('')};
 const saveFile=()=>{if(!documentName){flash('Please select a file');return}changeCase(c=>({...c,followups:c.followups.map((f,i)=>i===followIndex?{...f,file:documentName}:f)}));setModal('')};
 const selectFile=(file)=>{setFields(f=>({...f,evidence:file}));setModal('Exit')};
-const activateTab=tab=>{setActiveTab(tab.id);if(tab.clientId)setClientId(tab.clientId);if(tab.caseId)setCaseId(tab.caseId);setScreen(tab.screen)};
-const closeTab=id=>{if(id==='Home')return;setTabs(x=>x.filter(t=>t.id!==id));if(activeTab===id){setActiveTab('Home');setScreen('Home')}};
 const openSearchResults=value=>{setQuery(value);setClientListFilter('All');setScreen('Clients')};
 const openExited=()=>{setQuery('');setClientListFilter('Exited');setScreen('Clients')};
+const breadcrumbItems = [
+  {key:'root',label:'NJC'},
+  ...(screen==='Home' ? [{key:'Home',label:'Homepage'}] :
+      ['Client Detail','Case Detail','Form Editor'].includes(screen)
+        ? [
+          {key:'Clients',label:'Clients'},
+          {key:'Client Detail',label:client.name},
+          ...(screen==='Case Detail'||screen==='Form Editor' ? [{key:'Case Detail',label:(current?.form||'201')+' Case'}] : []),
+          ...(screen==='Form Editor' ? [{key:'Form Editor',label:'Form Editor'}] : [])
+        ]
+        : [{key:screen,label:screen}])
+];
+const navigateBreadcrumb=key=>{
+  if(key==='root'||key==='Home'){setScreen('Home');return}
+  if(key==='Clients'){setQuery('');setClientListFilter('All');setScreen('Clients');return}
+  if(key==='Client Detail'){setEditing(false);setScreen('Client Detail');return}
+  if(key==='Case Detail'){setScreen('Case Detail');return}
+  setScreen(key)
+};
 const pageTitle=screen==='Client Detail'?client.name:screen==='Case Detail'?current?.form+' Case Detail':screen==='Form Editor'?current?.form+' Form Editor':screen;
 const casesForTable=(list)=> <div className="table-scroll"><table><thead><tr><th>Client</th><th>Form</th><th>App Date</th><th>App Number</th><th>Case Status</th><th>Action</th></tr></thead><tbody>{list.map(({c,r})=><tr key={c.id+r.id} onDoubleClick={()=>openCase(r,c.id)}><td>{c.name}</td><td>{r.form}</td><td>{r.applicationDate||'—'}</td><td>{r.applicationNumber||'—'}</td><td><span className="status">{getStatus(r)}</span></td><td><Button onClick={()=>openCase(r,c.id)}>Open</Button></td></tr>)}</tbody></table></div>;
 return <div className="shell">
@@ -59,7 +73,7 @@ return <div className="shell">
 <button title="Add New Client" className="nav outline" onClick={()=>show('New Client')}><span className="nav-icon">＋</span>{!sidebarCollapsed&&<span>Add New Client</span>}</button>
 {!sidebarCollapsed&&<p className="sidebar-foot">CLIENT MANAGEMENT SYSTEM</p>}
 </aside>
-<div className="work"><WorkspaceTabs tabs={tabs} activeTab={activeTab} onActivate={activateTab} onClose={closeTab} onNew={()=>setScreen('Home')}/><div className="topbar"><strong>Career Advisor CMS</strong><span>Homepage Wireframe v1.0 · Synthetic data only</span></div>
+<div className="work"><WorkspaceBreadcrumbHeader items={breadcrumbItems} onNavigate={navigateBreadcrumb}/>
 <main>{screen!=='Home'&&<header className="page-head"><div><h1>{pageTitle}</h1><p>{screen==='Client Detail'?'Client ID: '+client.id:screen==='Case Detail'?'Application #: '+(current?.applicationNumber||'Not assigned'):'Internal case management workspace'}</p></div><div className="actions">{screen==='Client Detail'&&<><Button onClick={startProfile}>Edit Profile</Button><Button kind="primary" onClick={()=>show('New Enrollment')}>+ Start New Enrollment</Button></>}{screen==='Case Detail'&&<Button onClick={()=>setScreen('Client Detail')}>← Back to {client.name}</Button>}</div></header>}
 {screen==='Home'&&<HomeDashboard clients={clients} onOpenClient={openClient} onSearch={openSearchResults} onAddClient={()=>show('New Client')} onReady={()=>{setQuery('');setScreen('Enroll Clients')}} onExited={openExited} onEnrolled={()=>{setQuery('');setScreen('Enroll Clients')}} onCalendar={()=>setScreen('Calendar')}/>}
 {screen==='Enroll Clients'&&<><Card title="Search Existing Clients"><input className="wide-input" placeholder="Search existing clients" value={query} onChange={e=>setQuery(e.target.value)}/>{query&&clients.filter(c=>c.name.toLowerCase().includes(query.toLowerCase())).map(c=><p key={c.id} className="link" onClick={()=>openClient(c.id)}>{c.name} · {c.id} →</p>)}</Card><Card title="Ready for Enroll">{ready.map(c=><div className="item" key={c.id} onClick={()=>openClient(c.id)}><b>{c.name}</b><span>Open Profile →</span></div>)}</Card><Card title="Enrolled (Not Exited)">{casesForTable(clients.flatMap(c=>c.cases.filter(r=>getStatus(r)==='Enrolled').map(r=>({c,r}))))}</Card></>}

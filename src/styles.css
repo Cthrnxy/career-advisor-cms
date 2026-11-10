@@ -11,11 +11,4 @@
 .sidebar .nav{display:flex;align-items:center;gap:12px}
 .sidebar .nav-icon{font-size:20px;width:24px;display:inline-flex;align-items:center;justify-content:center}
 .sidebar.collapsed .nav{justify-content:center;padding:10px 0}
-.workspace-tabs{height:58px;background:#eff1f3;display:flex;align-items:flex-end;gap:8px;border-bottom:1px solid #d5dce4;padding:8px 17px 0}
-.tabs-scroll{display:flex;gap:5px;flex:1;align-items:flex-end;overflow-x:auto;min-width:0}
-.workspace-tab{background:#e2e6ea;border:1px solid #cdd5df;border-bottom:0;border-radius:10px 10px 0 0;display:flex;align-items:center;gap:5px;min-width:115px;max-width:230px;height:43px;padding:0 8px 0 12px;flex:0 0 auto}
-.workspace-tab.current{background:#fff;height:46px}
-.workspace-tab-label{border:0;background:transparent;display:flex;gap:11px;align-items:center;min-width:0;flex:1;font-size:13px;color:#314153;cursor:pointer}
-.tab-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tab-close{background:transparent;border:0;color:#7c8b9a;font-size:20px;cursor:pointer;padding:0 4px}
-.tabs-new{font-size:23px;border:0;background:transparent;cursor:pointer;margin:0 8px 10px 0;color:#4d5e6e}
+/* Workspace navigation has moved to layouts/breadcrumb.css (v1.1). */
