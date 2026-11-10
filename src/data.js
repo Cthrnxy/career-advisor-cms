@@ -1,0 +1,12 @@
+export const DOCUMENT_TYPES=['Photo ID','Green Card / Work Permit','SSN Card','EV / Paystub','Client Signature','Employer Signature','Other Documents'];
+export const uid=()=>Math.random().toString(36).slice(2,11);
+export const demoClients=[
+{id:'CL-1024',name:'Mei Chen',phone:'(415) 555-0101',email:'mei@example.com',employment:'Employed',status:'Job Searching',docs:[{name:'PhotoID.pdf',kind:'Photo ID'},{name:'GreenCard.pdf',kind:'Green Card / Work Permit'},{name:'SSNCard.pdf',kind:'SSN Card'},{name:'EmployerSignature.pdf',kind:'Employer Signature'},{name:'ClientSignature.pdf',kind:'Client Signature'},{name:'Paystub_Oct2026.pdf',kind:'EV / Paystub'}],visits:[{date:'2026-10-31',service:'Resume Support',notes:'Updated resume and applications'},{date:'2026-10-19',service:'Job Search',notes:'Reviewed job openings'}],cases:[
+{id:'case-201',form:'201',applicationDate:'2025-04-01',applicationNumber:'4075895',enrollmentDate:'2025-04-01',enrolled:true,activities:[{type:'IEP',date:'2025-04-01',note:''},{type:'Job Searching',date:'2025-04-01',note:''},{type:'Job Searching',date:'2025-04-11',note:''}],exit:{date:'2025-04-11',outcome:'Job Found',evidence:'EmployerSignature.pdf'},followups:[{date:'2025-07-15',note:'Completed',file:'Followup_Q1.pdf'},{date:'2025-10-15',note:'Completed',file:''}],fields:{}},
+{id:'case-999',form:'999',applicationDate:'2026-08-25',applicationNumber:'4100534',enrollmentDate:'2026-08-25',enrolled:true,activities:[{type:'Job Searching',date:'2026-08-25',note:''},{type:'Job Searching',date:'2026-09-05',note:''}],exit:{date:'2026-09-05',outcome:'Job Found',evidence:'Paystub_Oct2026.pdf'},followups:[{date:'2026-10-10',note:'Contact completed',file:''}],fields:{}}
+]},
+{id:'CL-1058',name:'Jason Lee',phone:'(415) 555-0132',email:'jason@example.com',employment:'Unemployed',status:'Ready for Enroll',docs:[{name:'EmploymentVerification.pdf',kind:'EV / Paystub'}],visits:[],cases:[]},
+{id:'CL-1076',name:'Lucy Wang',phone:'(415) 555-0122',email:'lucy@example.com',employment:'Employed',status:'Follow-up Needed',docs:[],visits:[],cases:[]}
+];
+export const getStatus=c=>!c.enrolled?'Draft':!c.exit?'Enrolled':c.followups.filter(f=>f.date).length>=(c.form==='201'?4:1)?'Complete':c.followups.filter(f=>f.date).length?'Follow-up '+c.followups.filter(f=>f.date).length:'Exited';
+export const makeCase=form=>({id:uid(),form,applicationDate:'',applicationNumber:'',enrollmentDate:'',enrolled:false,activities:[],exit:null,followups:[],fields:{}});
