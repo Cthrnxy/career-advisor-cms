@@ -1,28 +1,26 @@
-# Workspace Breadcrumb Header v1.1
+# Workspace navigation v1.2 — Browser Tabs + Breadcrumb
 
-Replaces the former WorkspaceTabs component. This is a **hierarchical page path**, not recently opened tabs, browser history, or an in-page section menu.
+Final navigation direction: **Browser-style work tabs on the first row**, **hierarchical breadcrumb on the second row**.
 
-## Navigation paths
+## Responsibility of each control
 
-- Home: \`NJC > Homepage\`
-- Clients: \`NJC > Clients\`
-- Enroll Clients: \`NJC > Enroll Clients\`
-- Client Detail: \`NJC > Clients > Mei Chen\`
-- Case Detail: \`NJC > Clients > Mei Chen > 201 Case\` (or 999)
-- Form Editor: \`NJC > Clients > Mei Chen > 201 Case > Form Editor\`
-- Calendar: \`NJC > Calendar\`
-- Settings: \`NJC > Settings\`
+- Tabs switch between the open client, case and form workspaces without re-searching. An open resource is uniquely keyed by client ID and, for Case/Form, its case ID. A 201 case belonging to one client is not conflated with another client's 201 case.
+- The Home tab is permanently present. The remaining tabs have close buttons. Closing one only closes the view; it does not delete client records or cases.
+- When tabs no longer fit horizontally, the strip scrolls. The "Open (N)" dropdown independently lists all open tabs.
+- Breadcrumb shows the current **parent hierarchy**, not the history of previously visited pages: e.g. NJC > Clients > Mei Chen > 201 Case > Form Editor. Clicking any ancestor returns to that level.
+- The breadcrumb folder collects **only hidden earlier ancestor segments** when the path is too long, keeping the last two levels visible.
+- Switching away from an edited Client Profile with unsaved field changes requires confirmation before discarding. Case Form Editor demo fields currently update local browser state immediately.
+- Open workspace tabs reset on browser refresh in this prototype; saving the tab layout or individual unsaved form drafts for later sessions remains a future decision.
 
-## Overflow / folder behavior
+## Sample paths
 
-- If the hierarchy is long (more than 4 levels), or the rendered width cannot show it comfortably, show the folder overflow button.
-- The folder contains **only hidden earlier ancestors of the current path**, ordered from the root to the nearer parent.
-- The last two levels stay visible. The **current** page is always the rightmost visible level.
-- Clicking an ancestor (inline or in the folder dropdown) navigates to that level, preserving the selected client and case where relevant.
-- Clicking the folder toggles the dropdown; clicking outside or pressing Escape closes it.
-- Short paths are fully visible and do not show the folder.
-- The client-specific section menus remain inside the Client Detail / Case Detail pages; they are NOT part of breadcrumb overflow.
+Home: NJC > Homepage
+Client: NJC > Clients > Mei Chen
+201 Case: NJC > Clients > Mei Chen > 201 Case
+Form Editor: NJC > Clients > Mei Chen > 201 Case > Form Editor
 
-## Versioning
+## Versions and constraints
 
-Homepage layout, Quick Access, Appointments, To-do, Enrolled (Not Exited), and seeded fictional client information remain **Homepage Wireframe v1.0**. Only the top workspace navigation changes to **Header v1.1**.
+Homepage Wireframe v1.0 stays unchanged: greeting, client search, Quick Access, Today's Work, Enrolled (Not Exited), and existing synthetic clients.
+The Breadcrumb overflow from Header v1.1 is preserved, now paired with Browser Tabs in navigation v1.2.
+No new decisions for Client Detail, Case Detail, Form Editor, Documents or Calendar are assumed from this navigation change. See docs/OPEN_DESIGN_DECISIONS.md.
