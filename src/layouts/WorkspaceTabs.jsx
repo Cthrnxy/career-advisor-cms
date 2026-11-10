@@ -1,0 +1,4 @@
+import React from 'react';
+export default function WorkspaceTabs({tabs,activeTab,onActivate,onClose,onNew}){
+ return <div className="workspace-tabs" role="tablist" aria-label="Open workspace tabs"><div className="tabs-scroll">{tabs.map(tab=><div key={tab.id} className={'workspace-tab '+(activeTab===tab.id?'current':'')}><button role="tab" aria-selected={activeTab===tab.id} className="workspace-tab-label" onClick={()=>onActivate(tab)}><span>{tab.screen==='Home'?'⌂':tab.screen==='Client Detail'?'♙':'▤'}</span><span className="tab-text">{tab.title}</span></button>{tab.id!=='Home'&&<button title={'Close '+tab.title} className="tab-close" onClick={()=>onClose(tab.id)}>×</button>}</div>)}</div><button className="tabs-new" title="Open Home" aria-label="Open Home" onClick={onNew}>＋</button></div>;
+}

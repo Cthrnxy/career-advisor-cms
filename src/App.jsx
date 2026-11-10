@@ -1,4 +1,6 @@
 import React,{useEffect,useState} from 'react';
+import HomeDashboard from './features/home/HomeDashboard.jsx';
+import WorkspaceTabs from './layouts/WorkspaceTabs.jsx';
 import {demoClients,getStatus,makeCase,DOCUMENT_TYPES,uid} from './data.js';
 const STORE='career-advisor-cms-synthetic-v01';
 const load=()=>{try{return JSON.parse(localStorage.getItem(STORE))||demoClients}catch{return demoClients}};
@@ -14,6 +16,10 @@ const[screen,setScreen]=useState('Home');
 const[clientId,setClientId]=useState('CL-1024');
 const[caseId,setCaseId]=useState('case-201');
 const[query,setQuery]=useState('');
+const[clientListFilter,setClientListFilter]=useState('All');
+const[sidebarCollapsed,setSidebarCollapsed]=useState(false);
+const[tabs,setTabs]=useState([{id:'Home',title:'Home',screen:'Home'}]);
+const[activeTab,setActiveTab]=useState('Home');
 const[editing,setEditing]=useState(false);
 const[profile,setProfile]=useState({});
 const[modal,setModal]=useState('');
@@ -23,9 +29,10 @@ const[followIndex,setFollowIndex]=useState(0);
 const[documentName,setDocumentName]=useState('');
 const[message,setMessage]=useState('');
 useEffect(()=>localStorage.setItem(STORE,JSON.stringify(clients)),[clients]);
+useEffect(()=>{const id=screen==='Client Detail'?'client:'+clientId:screen==='Case Detail'?'case:'+caseId:screen==='Form Editor'?'form:'+caseId:screen;const title=screen==='Client Detail'?clients.find(c=>c.id===clientId)?.name||'Client':screen==='Case Detail'?(clients.flatMap(c=>c.cases).find(c=>c.id===caseId)?.form||'201')+' Case':screen==='Form Editor'?'Form Editor':screen;setTabs(t=>t.some(x=>x.id===id)?t.map(x=>x.id===id?{...x,title}:x):[...t,{id,title,screen,clientId,caseId}]);setActiveTab(id)},[screen,clientId,caseId,clients]);
 const client=clients.find(c=>c.id===clientId)||clients[0];
 const current=client.cases.find(c=>c.id===caseId);
-const ready=clients.filter(c=>c.docs.some(d=>['EV / Paystub','Employer Signature'].includes(d.kind)));
+const ready=clients.filter(c=>c.status==='Ready for Enroll');
 const show=m=>{setModal(m);setFields({});setDocumentName('')};
 const flash=m=>{setMessage(m);setTimeout(()=>setMessage(''),3500)};
 const changeClient=(id,fn)=>setClients(arr=>arr.map(c=>c.id===id?fn(c):c));
@@ -38,16 +45,27 @@ const saveExit=()=>{if(!fields.date){flash('Exit date required');return}changeCa
 const saveFollow=()=>{if(!fields.date){flash('Date required');return}changeCase(c=>({...c,followups:[...c.followups,{date:fields.date,note:fields.note||'',file:''}]}));setModal('')};
 const saveFile=()=>{if(!documentName){flash('Please select a file');return}changeCase(c=>({...c,followups:c.followups.map((f,i)=>i===followIndex?{...f,file:documentName}:f)}));setModal('')};
 const selectFile=(file)=>{setFields(f=>({...f,evidence:file}));setModal('Exit')};
+const activateTab=tab=>{setActiveTab(tab.id);if(tab.clientId)setClientId(tab.clientId);if(tab.caseId)setCaseId(tab.caseId);setScreen(tab.screen)};
+const closeTab=id=>{if(id==='Home')return;setTabs(x=>x.filter(t=>t.id!==id));if(activeTab===id){setActiveTab('Home');setScreen('Home')}};
+const openSearchResults=value=>{setQuery(value);setClientListFilter('All');setScreen('Clients')};
+const openExited=()=>{setQuery('');setClientListFilter('Exited');setScreen('Clients')};
 const pageTitle=screen==='Client Detail'?client.name:screen==='Case Detail'?current?.form+' Case Detail':screen==='Form Editor'?current?.form+' Form Editor':screen;
 const casesForTable=(list)=> <div className="table-scroll"><table><thead><tr><th>Client</th><th>Form</th><th>App Date</th><th>App Number</th><th>Case Status</th><th>Action</th></tr></thead><tbody>{list.map(({c,r})=><tr key={c.id+r.id} onDoubleClick={()=>openCase(r,c.id)}><td>{c.name}</td><td>{r.form}</td><td>{r.applicationDate||'—'}</td><td>{r.applicationNumber||'—'}</td><td><span className="status">{getStatus(r)}</span></td><td><Button onClick={()=>openCase(r,c.id)}>Open</Button></td></tr>)}</tbody></table></div>;
 return <div className="shell">
-<aside className="sidebar"><h2>▦ Career Advisor</h2><small>WORKSPACE</small>{['Home','Enroll Clients','Clients','Calendar'].map(name=><button key={name} className={'nav '+(screen===name?'selected':'')} onClick={()=>setScreen(name)}>{name}</button>)}<button className="nav outline" onClick={()=>show('New Client')}>+ Add New Client</button><p className="sidebar-foot">CLIENT MANAGEMENT SYSTEM</p></aside>
-<div className="work"><div className="topbar"><strong>Career Advisor CMS</strong><span>v0.1 Prototype · Synthetic data</span></div>
-<main><header className="page-head"><div><h1>{pageTitle}</h1><p>{screen==='Client Detail'?'Client ID: '+client.id:screen==='Case Detail'?'Application #: '+(current?.applicationNumber||'Not assigned'):'Internal case management workspace'}</p></div><div className="actions">{screen==='Client Detail'&&<><Button onClick={startProfile}>Edit Profile</Button><Button kind="primary" onClick={()=>show('New Enrollment')}>+ Start New Enrollment</Button></>}{screen==='Case Detail'&&<Button onClick={()=>setScreen('Client Detail')}>← Back to {client.name}</Button>}</div></header>
-{screen==='Home'&&<><Card title="Search Clients"><input className="wide-input" placeholder="Search by name or client ID..." value={query} onChange={e=>setQuery(e.target.value)}/>{query&&clients.filter(c=>(c.name+' '+c.id).toLowerCase().includes(query.toLowerCase())).map(c=><div className="search-result" key={c.id} onClick={()=>openClient(c.id)}>{c.name} · {c.id} →</div>)}</Card><div className="two-col"><Card title="Ready for Enroll">{ready.map(c=><div className="item" key={c.id} onClick={()=>openClient(c.id)}>{c.name} <span>Open →</span></div>)}</Card><Card title="Exited">{clients.filter(c=>c.cases.some(r=>r.exit)).map(c=><div className="item" key={c.id} onClick={()=>openClient(c.id)}>{c.name} <span>Open →</span></div>)}</Card><Card title="Upcoming Appointments"><p>10:00 AM · Client Visit</p><p>2:00 PM · Follow-up</p></Card><Card title="To-do"><p>Review documents</p><p>Complete enrollment notes</p></Card></div><Card title="Enrolled (Not Exited)">{casesForTable(clients.flatMap(c=>c.cases.filter(r=>getStatus(r)==='Enrolled').map(r=>({c,r}))))}</Card></>}
+<aside className={'sidebar '+(sidebarCollapsed?'collapsed':'')}>
+<div className="sidebar-title"><span className="logo">▦</span>{!sidebarCollapsed&&<h2>Career Advisor</h2>}<button title={sidebarCollapsed?'Expand sidebar':'Collapse sidebar'} aria-label={sidebarCollapsed?'Expand sidebar':'Collapse sidebar'} className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)}>{sidebarCollapsed?'»':'«'}</button></div>
+{!sidebarCollapsed&&<small>WORKSPACE</small>}
+{[['⌂','Home'],['▤','Enroll Clients'],['♙','Clients'],['▦','Calendar'],['⚙','Settings']].map(([icon,name])=><button key={name} title={name} className={'nav '+(screen===name?'selected':'')} onClick={()=>{if(name==='Clients'){setQuery('');setClientListFilter('All')}setScreen(name)}}><span className="nav-icon">{icon}</span>{!sidebarCollapsed&&<span>{name}</span>}</button>)}
+<button title="Add New Client" className="nav outline" onClick={()=>show('New Client')}><span className="nav-icon">＋</span>{!sidebarCollapsed&&<span>Add New Client</span>}</button>
+{!sidebarCollapsed&&<p className="sidebar-foot">CLIENT MANAGEMENT SYSTEM</p>}
+</aside>
+<div className="work"><WorkspaceTabs tabs={tabs} activeTab={activeTab} onActivate={activateTab} onClose={closeTab} onNew={()=>setScreen('Home')}/><div className="topbar"><strong>Career Advisor CMS</strong><span>Homepage Wireframe v1.0 · Synthetic data only</span></div>
+<main>{screen!=='Home'&&<header className="page-head"><div><h1>{pageTitle}</h1><p>{screen==='Client Detail'?'Client ID: '+client.id:screen==='Case Detail'?'Application #: '+(current?.applicationNumber||'Not assigned'):'Internal case management workspace'}</p></div><div className="actions">{screen==='Client Detail'&&<><Button onClick={startProfile}>Edit Profile</Button><Button kind="primary" onClick={()=>show('New Enrollment')}>+ Start New Enrollment</Button></>}{screen==='Case Detail'&&<Button onClick={()=>setScreen('Client Detail')}>← Back to {client.name}</Button>}</div></header>}
+{screen==='Home'&&<HomeDashboard clients={clients} onOpenClient={openClient} onSearch={openSearchResults} onAddClient={()=>show('New Client')} onReady={()=>{setQuery('');setScreen('Enroll Clients')}} onExited={openExited} onEnrolled={()=>{setQuery('');setScreen('Enroll Clients')}} onCalendar={()=>setScreen('Calendar')}/>}
 {screen==='Enroll Clients'&&<><Card title="Search Existing Clients"><input className="wide-input" placeholder="Search existing clients" value={query} onChange={e=>setQuery(e.target.value)}/>{query&&clients.filter(c=>c.name.toLowerCase().includes(query.toLowerCase())).map(c=><p key={c.id} className="link" onClick={()=>openClient(c.id)}>{c.name} · {c.id} →</p>)}</Card><Card title="Ready for Enroll">{ready.map(c=><div className="item" key={c.id} onClick={()=>openClient(c.id)}><b>{c.name}</b><span>Open Profile →</span></div>)}</Card><Card title="Enrolled (Not Exited)">{casesForTable(clients.flatMap(c=>c.cases.filter(r=>getStatus(r)==='Enrolled').map(r=>({c,r}))))}</Card></>}
-{screen==='Clients'&&<Card title="All Clients">{clients.map(c=><div key={c.id} className="item" onClick={()=>openClient(c.id)}>{c.name} · {c.id}<span>Open →</span></div>)}</Card>}
-{screen==='Calendar'&&<Card title="Upcoming Appointments"><p>10:00 AM · Client visit</p><p>2:00 PM · Follow-up</p><p className="muted">Calendar integrations are planned for a later version.</p></Card>}
+{screen==='Clients'&&<Card title={clientListFilter==='Exited'?'Exited Clients':'All Clients'}>{clients.filter(c=> (clientListFilter!=='Exited'||c.cases.some(r=>getStatus(r)==='Exited')) && (!query.trim()||(c.name+' '+c.id+' '+(c.phone||'')+' '+c.cases.map(r=>r.applicationNumber).join(' ')).toLowerCase().includes(query.toLowerCase()))).map(c=><div key={c.id} className="item" onClick={()=>openClient(c.id)}>{c.name} · {c.id}<span>Open →</span></div>)}</Card>}
+{screen==='Calendar'&&<Card title="Upcoming Appointments"><p>9:30 AM · Lihua Zhang — Document Review</p><p>11:00 AM · Ming Chen — Enrollment</p><p>2:00 PM · Jason Lee — Job Search Support</p><p className="muted">Synthetic appointments for demonstration; calendar integration is planned.</p></Card>}
+{screen==='Settings'&&<Card title="Settings"><p>This is a frontend-only prototype using synthetic data. No backend or real client files are connected.</p></Card>}
 {screen==='Client Detail'&&<><Card title="Client Information">{editing?<><div className="field-grid">{[['name','Name'],['phone','Phone Number'],['email','Email Address'],['employment','Employment Status'],['status','Client Profile Status']].map(([key,label])=><Input key={key} label={label} value={profile[key]} onChange={v=>setProfile(p=>({...p,[key]:v}))}/>)}</div><div className="right"><Button onClick={()=>setEditing(false)}>Cancel</Button><Button kind="primary" onClick={()=>{if(!profile.name?.trim()){flash('Name is required');return}changeClient(client.id,c=>({...c,name:profile.name,phone:profile.phone,email:profile.email,employment:profile.employment,status:profile.status}));setEditing(false);flash('Profile saved locally')}}>Save Changes</Button></div></>:<FormRows items={ [['Name',client.name],['Client ID',client.id],['Phone Number',client.phone],['Email Address',client.email],['Employment Status',client.employment],['Client Profile Status',client.status]]}/>}</Card>
 <Card title="Enrollment Records"><div className="table-scroll"><table><thead><tr><th>Form</th><th>App Date</th><th>App Number</th><th>Case Status</th><th>Open</th></tr></thead><tbody>{client.cases.map(r=><tr key={r.id} onDoubleClick={()=>openCase(r)}><td>{r.form}</td><td>{r.applicationDate||'—'}</td><td>{r.applicationNumber||'—'}</td><td><span className="status">{getStatus(r)}</span></td><td><Button onClick={()=>openCase(r)}>Open →</Button></td></tr>)}</tbody></table></div><small>Double-click any row to open its independent Case Detail.</small></Card>
 <Card title="Documents on File">{DOCUMENT_TYPES.filter(k=>!k.includes('Signature')).map(kind=><div className="item" key={kind}><div><b>{kind}</b><small>{client.docs.filter(d=>d.kind===kind).at(-1)?.name||'Not uploaded'}</small></div><Button onClick={()=>{setFields({kind});show('Client File')}}>Upload / Replace</Button></div>)}</Card>

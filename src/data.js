@@ -6,7 +6,16 @@ export const demoClients=[
 {id:'case-999',form:'999',applicationDate:'2026-08-25',applicationNumber:'4100534',enrollmentDate:'2026-08-25',enrolled:true,activities:[{type:'Job Searching',date:'2026-08-25',note:''},{type:'Job Searching',date:'2026-09-05',note:''}],exit:{date:'2026-09-05',outcome:'Job Found',evidence:'Paystub_Oct2026.pdf'},followups:[{date:'2026-10-10',note:'Contact completed',file:''}],fields:{}}
 ]},
 {id:'CL-1058',name:'Jason Lee',phone:'(415) 555-0132',email:'jason@example.com',employment:'Unemployed',status:'Ready for Enroll',docs:[{name:'EmploymentVerification.pdf',kind:'EV / Paystub'}],visits:[],cases:[]},
-{id:'CL-1076',name:'Lucy Wang',phone:'(415) 555-0122',email:'lucy@example.com',employment:'Employed',status:'Follow-up Needed',docs:[],visits:[],cases:[]}
+{id:'CL-1076',name:'Lucy Wang',phone:'(415) 555-0122',email:'lucy@example.com',employment:'Employed',status:'Follow-up Needed',docs:[],visits:[],cases:[]},
+{id:'CA-1001',name:'Lihua Zhang',phone:'(415) 555-0123',email:'lihua@example.com',employment:'Employed',status:'In Progress',program:'IHSS',docs:[{name:'Lihua_ID.pdf',kind:'Photo ID'}],visits:[],cases:[
+{id:'case-lihua-201',form:'201',applicationDate:'2026-10-19',applicationNumber:'SAMPLE-201-LIHUA',enrollmentDate:'2026-10-20',enrolled:true,activities:[{type:'IEP',date:'2026-10-20',note:'Enrollment day'},{type:'Job Searching',date:'2026-10-27',note:'Job search activity'}],exit:null,followups:[],fields:{}}]},
+{id:'CA-1045',name:'Linda Chen',phone:'(650) 555-0199',email:'linda@example.com',employment:'Employed',status:'Ready for Enroll',program:'IHSS',docs:[{name:'Linda_EV.pdf',kind:'EV / Paystub'},{name:'Linda_EmployerSignature.pdf',kind:'Employer Signature'}],visits:[],cases:[]},
+{id:'CA-1078',name:'Lisa Wang',phone:'(415) 555-0177',email:'lisa@example.com',employment:'Employed',status:'Exited',program:'Hospitality OST – General',docs:[],visits:[],cases:[
+{id:'case-lisa-999',form:'999',applicationDate:'2026-09-14',applicationNumber:'SAMPLE-999-LISA',enrollmentDate:'2026-09-15',enrolled:true,activities:[{type:'Job Searching',date:'2026-09-15',note:''}],exit:{date:'2026-10-08',outcome:'Job Found',evidence:''},followups:[],fields:{}}]},
+{id:'DEMO-MING',name:'Ming Chen',phone:'',email:'ming@example.com',employment:'Employed',status:'In Progress',program:'Hospitality OST – Custodial',docs:[],visits:[],cases:[
+{id:'case-ming-201',form:'201',applicationDate:'2026-10-17',applicationNumber:'SAMPLE-201-MING',enrollmentDate:'2026-10-18',enrolled:true,activities:[{type:'IEP',date:'2026-10-18',note:''},{type:'Job Searching',date:'2026-10-25',note:''}],exit:null,followups:[],fields:{}}]},
+{id:'DEMO-WEI',name:'Wei Liu',phone:'',email:'wei@example.com',employment:'Employed',status:'In Progress',program:'Hospitality OST – General',docs:[],visits:[],cases:[
+{id:'case-wei-999',form:'999',applicationDate:'2026-10-14',applicationNumber:'SAMPLE-999-WEI',enrollmentDate:'2026-10-15',enrolled:true,activities:[{type:'Job Searching',date:'2026-10-24',note:''}],exit:null,followups:[],fields:{}}]}
 ];
 export const getStatus=c=>!c.enrolled?'Draft':!c.exit?'Enrolled':c.followups.filter(f=>f.date).length>=(c.form==='201'?4:1)?'Complete':c.followups.filter(f=>f.date).length?'Follow-up '+c.followups.filter(f=>f.date).length:'Exited';
 export const makeCase=form=>({id:uid(),form,applicationDate:'',applicationNumber:'',enrollmentDate:'',enrolled:false,activities:[],exit:null,followups:[],fields:{}});
