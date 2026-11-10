@@ -103,7 +103,7 @@ return <div className="shell">
 <aside className={'sidebar '+(sidebarCollapsed?'collapsed':'')}>
 <div className="sidebar-title"><span className="logo">▦</span>{!sidebarCollapsed&&<h2>Career Advisor</h2>}<button title={sidebarCollapsed?'Expand sidebar':'Collapse sidebar'} aria-label={sidebarCollapsed?'Expand sidebar':'Collapse sidebar'} className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)}>{sidebarCollapsed?'»':'«'}</button></div>
 {!sidebarCollapsed&&<small>WORKSPACE</small>}
-{[['⌂','Home'],['▤','Enroll Clients'],['♙','Clients'],['▦','Calendar'],['⚙','Settings']].map(([icon,name])=><button key={name} title={name} className={'nav '+(screen===name?'selected':'')} onClick={()=>{if(switchView(name)&&name==='Clients'){setQuery('');setClientListFilter('All')}}><span className="nav-icon">{icon}</span>{!sidebarCollapsed&&<span>{name}</span>}</button>)}
+{[['⌂','Home'],['▤','Enroll Clients'],['♙','Clients'],['▦','Calendar'],['⚙','Settings']].map(([icon,name])=><button key={name} title={name} className={'nav '+(screen===name?'selected':'')} onClick={()=>{if(switchView(name)&&name==='Clients'){setQuery('');setClientListFilter('All')}}}><span className="nav-icon">{icon}</span>{!sidebarCollapsed&&<span>{name}</span>}</button>)}
 <button title="Add New Client" className="nav outline" onClick={()=>show('New Client')}><span className="nav-icon">＋</span>{!sidebarCollapsed&&<span>Add New Client</span>}</button>
 {!sidebarCollapsed&&<p className="sidebar-foot">CLIENT MANAGEMENT SYSTEM</p>}
 </aside>
