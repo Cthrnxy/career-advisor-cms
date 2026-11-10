@@ -3,7 +3,7 @@ import HomeDashboard from './features/home/HomeDashboard.jsx';
 import WorkspaceTabs from './layouts/WorkspaceTabs.jsx';
 import {demoClients,getStatus,makeCase,DOCUMENT_TYPES,uid} from './data.js';
 const STORE='career-advisor-cms-synthetic-v01';
-const load=()=>{try{return JSON.parse(localStorage.getItem(STORE))||demoClients}catch{return demoClients}};
+const load=()=>{try{const saved=JSON.parse(localStorage.getItem(STORE));if(!Array.isArray(saved))return demoClients;const known=new Set(saved.map(c=>c.id));return [...saved,...demoClients.filter(c=>!known.has(c.id))]}catch{return demoClients}};
 const today=()=>new Date().toISOString().slice(0,10);
 function Button({children,onClick,kind='secondary',disabled=false}){return <button type="button" onClick={onClick} className={'btn '+kind} disabled={disabled}>{children}</button>}
 function Card({title,action,children}){return <section className="card"><div className="card-head"><h2>{title}</h2>{action}</div>{children}</section>}
