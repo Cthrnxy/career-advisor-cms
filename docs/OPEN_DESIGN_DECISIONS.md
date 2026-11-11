@@ -5,7 +5,7 @@ This is the **discussion backlog**, not a specification claiming unresolved inte
 ## Confirmed / preserve these
 
 - Homepage Wireframe v1.0 remains the baseline (greeting, search, Quick Access, appointments, To-do, enrolled list).
-- Top navigation v1.2: Browser Tabs for switching open resources, Breadcrumb for returning to parent levels, folder dropdown ONLY for hidden parent levels.
+- Top navigation v1.3: Browser-style Tabs **only**, no separate Breadcrumb row; parent client/case views remain reachable through their open tabs and the existing Back to Client / Back to Case actions.
 - Client Profile contains one combined 201/999 Enrollment Records table; each row opens its independent Case Detail.
 - Start New Enrollment explicitly selects 201 or 999 and creates an independent Draft; a profile edit or file upload does not generate a case.
 - Client status and Case status are separate.
@@ -44,7 +44,7 @@ This is the **discussion backlog**, not a specification claiming unresolved inte
 - Whether "View All" leads to Calendar, Workday or a distinct task manager. Current Home examples are fictional.
 
 ### 6. App-wide decisions and future implementation
-- The root breadcrumb currently says NJC even for other programs (HCA/HOSP). Is it a workspace label or program-specific location?
+- Program workspace/root selection (NJC/HCA/HOSP), independent of the removed Breadcrumb: decide if this affects search scope, dashboard, or client lists.
 - Persisting open tabs and drafts across refresh/devices, handling simultaneous edits and restoring closed tabs.
 - Reusable component design system, backend data layer, user permissions, secure document storage and audit logs.
 - Existing Vercel preview is protected; the GitHub repository is separate from the old PDF desktop project.

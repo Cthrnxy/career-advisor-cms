@@ -1,3 +1,7 @@
+# Archived — Workspace Breadcrumb navigation (v1.1–v1.2)
+
+**Superseded by the user's choice to keep Browser-style Tabs only (v1.3).** This document records an earlier exploration and does not describe the active navigation.
+
 # Workspace navigation v1.2 — Browser Tabs + Breadcrumb
 
 Final navigation direction: **Browser-style work tabs on the first row**, **hierarchical breadcrumb on the second row**.

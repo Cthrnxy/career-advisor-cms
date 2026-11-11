@@ -7,7 +7,7 @@ Based on the agreed November 9 Career Advisor dashboard wireframe, *职业顾问
 
 ## Layout and UX contract
 1. Collapsible left Sidebar: Home, Enroll Clients, Clients, Calendar, Settings; Add New Client action within sidebar.
-2. Workspace navigation uses Browser-style Tabs + Breadcrumb Header v1.2. Tabs represent concurrently opened resources; the Breadcrumb represents the current parent hierarchy, with earlier ancestors folded into a folder dropdown when long. Homepage content, cards and mock data stay v1.0.
+2. Workspace navigation uses Browser-style Tabs only (navigation v1.3). Each opened client, Case, or Form Editor has its own identifiable tab. There is no separate Breadcrumb row. Homepage content, cards, and mock data stay v1.0.
 3. Personalized greeting: "Good morning, Catherine".
 4. Prominent search by client name, phone, client ID, or application number. Suggestions may overlay lower content; selecting a suggestion opens the client's profile; Search opens Clients results.
 5. **No Program / Status / Funding filters on Homepage**. Filters from older wireframes were removed by the user.

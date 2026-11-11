@@ -1,6 +1,5 @@
 import React,{useEffect,useState} from 'react';
 import HomeDashboard from './features/home/HomeDashboard.jsx';
-import WorkspaceBreadcrumbHeader from './layouts/WorkspaceBreadcrumbHeader.jsx';
 import WorkspaceTabs from './layouts/WorkspaceTabs.jsx';
 import {getTabId,getTabTitle} from './layouts/navigation.js';
 import {demoClients,getStatus,makeCase,DOCUMENT_TYPES,uid} from './data.js';
@@ -78,25 +77,6 @@ const saveFile=()=>{if(!documentName){flash('Please select a file');return}chang
 const selectFile=(file)=>{setFields(f=>({...f,evidence:file}));setModal('Exit')};
 const openSearchResults=value=>{if(switchView('Clients')){setQuery(value);setClientListFilter('All')}};
 const openExited=()=>{if(switchView('Clients')){setQuery('');setClientListFilter('Exited')}};
-const breadcrumbItems = [
-  {key:'root',label:'NJC'},
-  ...(screen==='Home' ? [{key:'Home',label:'Homepage'}] :
-      ['Client Detail','Case Detail','Form Editor'].includes(screen)
-        ? [
-          {key:'Clients',label:'Clients'},
-          {key:'Client Detail',label:client.name},
-          ...(screen==='Case Detail'||screen==='Form Editor' ? [{key:'Case Detail',label:(current?.form||'201')+' Case'}] : []),
-          ...(screen==='Form Editor' ? [{key:'Form Editor',label:'Form Editor'}] : [])
-        ]
-        : [{key:screen,label:screen}])
-];
-const navigateBreadcrumb=key=>{
-  if(key==='root'||key==='Home'){switchView('Home');return}
-  if(key==='Clients'){if(switchView('Clients')){setQuery('');setClientListFilter('All')}return}
-  if(key==='Client Detail'){switchView('Client Detail');return}
-  if(key==='Case Detail'){switchView('Case Detail');return}
-  switchView(key);
-};
 const pageTitle=screen==='Client Detail'?client.name:screen==='Case Detail'?current?.form+' Case Detail':screen==='Form Editor'?current?.form+' Form Editor':screen;
 const casesForTable=(list)=> <div className="table-scroll"><table><thead><tr><th>Client</th><th>Form</th><th>App Date</th><th>App Number</th><th>Case Status</th><th>Action</th></tr></thead><tbody>{list.map(({c,r})=><tr key={c.id+r.id} onDoubleClick={()=>openCase(r,c.id)}><td>{c.name}</td><td>{r.form}</td><td>{r.applicationDate||'—'}</td><td>{r.applicationNumber||'—'}</td><td><span className="status">{getStatus(r)}</span></td><td><Button onClick={()=>openCase(r,c.id)}>Open</Button></td></tr>)}</tbody></table></div>;
 return <div className="shell">
@@ -109,7 +89,6 @@ return <div className="shell">
 </aside>
 <div className="work">
 <WorkspaceTabs tabs={tabs} activeId={activeTabId} onActivate={tab=>switchView(tab.screen,tab.clientId||clientId,tab.caseId||caseId)} onClose={closeWorkspace} onHome={()=>switchView('Home')}/>
-<WorkspaceBreadcrumbHeader items={breadcrumbItems} onNavigate={navigateBreadcrumb}/>
 <main>{screen!=='Home'&&<header className="page-head"><div><h1>{pageTitle}</h1><p>{screen==='Client Detail'?'Client ID: '+client.id:screen==='Case Detail'?'Application #: '+(current?.applicationNumber||'Not assigned'):'Internal case management workspace'}</p></div><div className="actions">{screen==='Client Detail'&&<><Button onClick={startProfile}>Edit Profile</Button><Button kind="primary" onClick={()=>show('New Enrollment')}>+ Start New Enrollment</Button></>}{screen==='Case Detail'&&<Button onClick={()=>switchView('Client Detail')}>← Back to {client.name}</Button>}</div></header>}
 {screen==='Home'&&<HomeDashboard clients={clients} onOpenClient={openClient} onSearch={openSearchResults} onAddClient={()=>show('New Client')} onReady={()=>{if(switchView('Enroll Clients'))setQuery('')}} onExited={openExited} onEnrolled={()=>{if(switchView('Enroll Clients'))setQuery('')}} onCalendar={()=>switchView('Calendar')}/>}
 {screen==='Enroll Clients'&&<><Card title="Search Existing Clients"><input className="wide-input" placeholder="Search existing clients" value={query} onChange={e=>setQuery(e.target.value)}/>{query&&clients.filter(c=>c.name.toLowerCase().includes(query.toLowerCase())).map(c=><p key={c.id} className="link" onClick={()=>openClient(c.id)}>{c.name} · {c.id} →</p>)}</Card><Card title="Ready for Enroll">{ready.map(c=><div className="item" key={c.id} onClick={()=>openClient(c.id)}><b>{c.name}</b><span>Open Profile →</span></div>)}</Card><Card title="Enrolled (Not Exited)">{casesForTable(clients.flatMap(c=>c.cases.filter(r=>getStatus(r)==='Enrolled').map(r=>({c,r}))))}</Card></>}
