@@ -1,3 +1,4 @@
+import {getCaseStatus} from './caseWorkflow.js';
 export const DOCUMENT_TYPES=['Photo ID','Green Card / Work Permit','SSN Card','EV / Paystub','Client Signature','Employer Signature','Other Documents'];
 export const uid=()=>Math.random().toString(36).slice(2,11);
 export const demoClients=[
@@ -17,5 +18,5 @@ export const demoClients=[
 {id:'DEMO-WEI',name:'Wei Liu',phone:'',email:'wei@example.com',employment:'Employed',status:'In Progress',program:'Hospitality OST – General',docs:[],visits:[],cases:[
 {id:'case-wei-999',form:'999',applicationDate:'2026-10-14',applicationNumber:'SAMPLE-999-WEI',enrollmentDate:'2026-10-15',enrolled:true,activities:[{type:'Job Searching',date:'2026-10-24',note:''}],exit:null,followups:[],fields:{}}]}
 ];
-export const getStatus=c=>!c.enrolled?'Draft':!c.exit?'Enrolled':c.followups.filter(f=>f.date).length>=(c.form==='201'?4:1)?'Complete':c.followups.filter(f=>f.date).length?'Follow-up '+c.followups.filter(f=>f.date).length:'Exited';
+export const getStatus=getCaseStatus;
 export const makeCase=form=>({id:uid(),form,applicationDate:'',applicationNumber:'',enrollmentDate:'',enrolled:false,activities:[],exit:null,followups:[],fields:{}});
