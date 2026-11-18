@@ -25,7 +25,8 @@ test('out-of-order edits never skip earlier incomplete rounds and every case app
  const r=exited('2026-05-15');r.followups=[{}, {date:'2026-10-02',file:'FU2.pdf'}];
  assert.equal(firstIncompleteFollowup(r),0);
  assert.equal(getCaseStatus(r),'Follow-up 1');
- const clients=[{id:'A',name:'Mei Chen',cases:[r,exited('2026-06-20','999')]}];
+ const other=exited('2026-06-20','999');other.id='demo-999';
+ const clients=[{id:'A',name:'Mei Chen',cases:[r,other]}];
  const result=dueFollowupCases(clients,new Date(2026,10,17));
  assert.equal(result.length,2);
  assert.equal(result.filter(c=>c.record.id===r.id).length,1);
