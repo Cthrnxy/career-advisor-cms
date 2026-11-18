@@ -4,13 +4,13 @@ This is the **discussion backlog**, not a specification claiming unresolved inte
 
 ## Confirmed / preserve these
 
-- Homepage Wireframe v1.0 remains the baseline (greeting, search, Quick Access, appointments, To-do, enrolled list).
+- Homepage v2.0 extends the v1.0 greeting, search, Quick Access, Appointments and To-do design with Enrolled and Follow-up Case-based tables, each showing at most five records and linking directly to Case Detail. See `HOMEPAGE_CLIENT_PROFILE_V2.md`.
 - Top navigation v1.3: Browser-style Tabs **only**, no separate Breadcrumb row; parent client/case views remain reachable through their open tabs and the existing Back to Client / Back to Case actions.
 - Client Profile contains one combined 201/999 Enrollment Records table; each row opens its independent Case Detail.
 - Start New Enrollment explicitly selects 201 or 999 and creates an independent Draft; a profile edit or file upload does not generate a case.
 - Client status and Case status are separate.
 - Activities can be added without a forced order; Exit date can default to last Job Searching, but is editable.
-- 201 has four Follow-up rounds; 999 has one; File Pending is allowed; final round makes the case Complete without blocking edits.
+- 201 has four Follow-up rounds; 999 has one. All rounds are editable without a strict order. A round is complete only when BOTH Completed Date and independent Document are present. Finished Case status is Complete; editing remains allowed.
 
 ## Not yet settled — later pages
 
@@ -21,7 +21,7 @@ This is the **discussion backlog**, not a specification claiming unresolved inte
 - Whether a new visit requires a new activity or remains client-level job-search support independent of a Case.
 
 ### 2. Documents & Signatures
-- Should an uploaded Case evidence document automatically appear in the client-level file library? Not yet decided.
+- Follow-up new files appear in Client Documents and are linked to the corresponding round (confirmed). Exact replacement/version retention and permissions for future production storage still need engineering review.
 - Actual file preview, upload, replace, missing docs and file version history. Evidence must eventually reference a specific document **version**, so replacing a file does not rewrite past evidence.
 - Exact document categories, employer signatures vs client signatures, multi-file grouping and permissions.
 - Current prototype stores filenames only and does not transfer real files.
@@ -30,7 +30,7 @@ This is the **discussion backlog**, not a specification claiming unresolved inte
 - Layout for editing/deleting existing activities, exit and follow-ups; audit trail for changed records.
 - Whether Draft or Enrolled case summary fields require visual review cues, and how the enrollment confirmation looks.
 - Case-specific evidence picker/preview, File Pending state, and intuitive post-exit revisions.
-- Four follow-ups as a timeline vs rows/stepper; notes, linked versions, pending states and deadline indicators.
+- Follow-up records use a compact Table: Round, Completed Date, File, Edit (no Period or Status columns). Future work: change history, linked file preview and clear saving feedback.
 - No hard evidence gate is assumed: caseworkers need flexible recording/backfills.
 
 ### 4. 201 / 999 Form Editor

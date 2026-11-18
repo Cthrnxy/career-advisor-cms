@@ -1,6 +1,6 @@
 # Homepage Wireframe v1.0 — Approved baseline
 
-Status: **v1.0 (Homepage only)**. Other app modules remain in active prototype development.
+Status: **v1.0 (historical approved baseline)**. Homepage v2.0 adds two Case-based tables; see `HOMEPAGE_CLIENT_PROFILE_V2.md`. Other app modules remain in prototype development.
 
 ## Canonical reference
 Based on the agreed November 9 Career Advisor dashboard wireframe, *职业顾问工作台仪表盘.png*.
