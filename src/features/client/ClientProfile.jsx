@@ -6,7 +6,7 @@ const visible=v=>v||'—';
 const asDate=v=>v?new Date(v+'T12:00:00').toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}):'—';
 function Meta({label,value}){return <div className="client-meta"><span>{label}</span><strong>{visible(value)}</strong></div>}
 function Field({label,value,onChange}){return <label className="client-field"><span>{label}</span><input value={value||''} onChange={e=>onChange(e.target.value)}/></label>}
-export default function ClientProfile({client,editing,profile,onProfileChange,onEdit,onCancel,onSave,onBack,onNewCase,onOpenCase,onUpload,onAddVisit}){
+export default function ClientProfile({client,editing,profile,onProfileChange,onEdit,onCancel,onSave,onNewCase,onOpenCase,onUpload,onAddVisit}){
  const docs=client.docs||[], cases=client.cases||[];
  const initials=client.name.trim().split(/\s+/).slice(0,2).map(x=>x[0]?.toUpperCase()).join('');
  const docRows=DOCUMENT_TYPES.filter(kind=>!kind.includes('Signature'));
@@ -19,7 +19,6 @@ export default function ClientProfile({client,editing,profile,onProfileChange,on
    <button type="button" className="client-doc-action" onClick={()=>onUpload(kind)}>{file?'Replace':'Upload'}</button>
  </div>};
  return <div className="client-v2">
-  <nav className="client-crumb" aria-label="Client hierarchy"><button onClick={onBack}>Clients</button><span aria-hidden="true">›</span><strong>{client.name}</strong></nav>
   <header className="client-hero">
     <div className="client-ident"><div className="client-avatar">{initials||'C'}</div><div><span className="client-eyebrow">CLIENT PROFILE · {client.id}</span><h1>{client.name}</h1><div className="client-chiprow"><span className="client-chip">{client.status||'Job Searching'}</span>{client.program&&<span className="client-chip alt">{client.program}</span>}</div></div></div>
     <div className="client-header-actions"><button className="client-button" onClick={onEdit}>Edit Profile</button><button className="client-button primary" onClick={onNewCase}>+ Start New Enrollment</button></div>

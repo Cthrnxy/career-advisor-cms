@@ -5,8 +5,8 @@ import ClientProfile from './features/client/ClientProfile.jsx';
 import {followupCount} from './caseWorkflow.js';
 import HomepageSettings from './features/settings/HomepageSettings.jsx';
 import {DEFAULT_HOME_SETTINGS,normalizeHomeSettings} from './homeSettings.js';
-import WorkspaceTabs from './layouts/WorkspaceTabs.jsx';
-import {getTabId,getTabTitle} from './layouts/navigation.js';
+import BreadcrumbNav from './layouts/BreadcrumbNav.jsx';
+import {getRouteId,getRouteLabel,pushNavigationHistory} from './layouts/navigation.js';
 import {demoClients,getStatus,makeCase,DOCUMENT_TYPES,uid} from './data.js';
 const STORE='career-advisor-cms-synthetic-v01';
 const HOME_SETTINGS_STORE='career-advisor-cms-home-preferences-v01';
@@ -27,7 +27,7 @@ const[caseId,setCaseId]=useState('case-201');
 const[query,setQuery]=useState('');
 const[clientListFilter,setClientListFilter]=useState('All');
 const[sidebarCollapsed,setSidebarCollapsed]=useState(false);
-const[tabs,setTabs]=useState([{id:'Home',screen:'Home',title:'Home'}]);
+const[routeHistory,setRouteHistory]=useState([]);
 const[editing,setEditing]=useState(false);
 const[profile,setProfile]=useState({});
 const[modal,setModal]=useState('');
@@ -41,16 +41,6 @@ useEffect(()=>localStorage.setItem(STORE,JSON.stringify(clients)),[clients]);
 useEffect(()=>{try{localStorage.setItem(HOME_SETTINGS_STORE,JSON.stringify(homeSettings))}catch{}},[homeSettings]);
 const client=clients.find(c=>c.id===clientId)||clients[0];
 const current=client.cases.find(c=>c.id===caseId);
-const activeTabId=getTabId(screen,clientId,caseId);
-useEffect(()=>{
-  const entry={id:activeTabId,screen,clientId,caseId,title:getTabTitle(screen,client,current)};
-  setTabs(existing=>{
-    const index=existing.findIndex(t=>t.id===activeTabId);
-    if(index<0)return [...existing,entry];
-    if(existing[index].title===entry.title)return existing;
-    return existing.map((t,i)=>i===index?{...t,title:entry.title}:t);
-  });
-},[activeTabId,screen,clientId,caseId,client.name,current?.form,current?.applicationNumber]);
 
 const ready=clients.filter(c=>c.status==='Ready for Enroll');
 const show=m=>{setModal(m);setFields({});setDocumentName('')};
@@ -58,29 +48,42 @@ const flash=m=>{setMessage(m);setTimeout(()=>setMessage(''),3500)};
 const changeClient=(id,fn)=>setClients(arr=>arr.map(c=>c.id===id?fn(c):c));
 const changeCase=(fn)=>changeClient(client.id,c=>({...c,cases:c.cases.map(r=>r.id===caseId?fn(r):r)}));
 const hasUnsavedProfile=()=>editing&&['name','phone','email','employment','status','program'].some(k=>(profile[k]||'')!==(client[k]||''));
+const routeChanged=(nextScreen,nextClientId,nextCaseId)=>getRouteId(nextScreen,nextClientId,nextCaseId)!==getRouteId(screen,clientId,caseId);
+const confirmLeave=()=>!hasUnsavedProfile()||window.confirm('You have unsaved changes in the client profile. Leave this page and discard those changes?');
 const switchView=(nextScreen,nextClientId=clientId,nextCaseId=caseId)=>{
-  if(getTabId(nextScreen,nextClientId,nextCaseId)!==activeTabId&&hasUnsavedProfile()){
-    if(!window.confirm('You have unsaved changes in the client profile. Leave this page and discard those changes?'))return false;
+  const changed=routeChanged(nextScreen,nextClientId,nextCaseId);
+  if(changed&&!confirmLeave())return false;
+  if(changed){
+    setRouteHistory(history=>pushNavigationHistory(history,{screen,clientId,caseId}));
+    setEditing(false);
+    setModal('');
   }
-  if(nextClientId!==clientId)setClientId(nextClientId);
-  if(nextCaseId!==caseId)setCaseId(nextCaseId);
-  if(getTabId(nextScreen,nextClientId,nextCaseId)!==activeTabId)setEditing(false);
+  setClientId(nextClientId);
+  setCaseId(nextCaseId);
   setScreen(nextScreen);
   return true;
 };
+const goBack=()=>{
+  const last=routeHistory.at(-1);
+  if(!last)return switchView('Home');
+  if(!confirmLeave())return false;
+  setRouteHistory(history=>history.slice(0,-1));
+  setEditing(false);
+  setModal('');
+  setClientId(last.clientId);
+  setCaseId(last.caseId);
+  setScreen(last.screen);
+  return true;
+};
+const navigateBreadcrumb=item=>switchView(item.screen,item.clientId||clientId,item.caseId||caseId);
+const previous=routeHistory.at(-1);
+const previousClient=clients.find(c=>c.id===previous?.clientId);
+const previousCase=previousClient?.cases.find(c=>c.id===previous?.caseId);
+const backLabel=getRouteLabel(previous,previousClient,previousCase);
 const openClient=id=>switchView('Client Detail',id);
 const openCase=(c,id=client.id)=>switchView('Case Detail',id,c.id);
-const closeWorkspace=id=>{
-  if(id==='Home')return;
-  if(id===activeTabId){
-    const others=tabs.filter(t=>t.id!==id);
-    const fallback=others[others.length-1]||{id:'Home',screen:'Home'};
-    if(!switchView(fallback.screen,fallback.clientId||clientId,fallback.caseId||caseId))return;
-  }
-  setTabs(existing=>existing.filter(t=>t.id!==id));
-};
 const startProfile=()=>{setProfile({...client});setEditing(true)};
-const createEnrollment=()=>{const c=makeCase(formChoice);changeClient(client.id,x=>({...x,cases:[c,...x.cases]}));setCaseId(c.id);setModal('');setScreen('Case Detail');flash('New Draft Case created')};
+const createEnrollment=()=>{const c=makeCase(formChoice);changeClient(client.id,x=>({...x,cases:[c,...x.cases]}));setModal('');openCase(c);flash('New Draft Case created')};
 const saveExit=()=>{if(!fields.date){flash('Exit date required');return}changeCase(c=>({...c,exit:{date:fields.date,outcome:fields.outcome||'Job Found',evidence:fields.evidence||''}}));setModal('')};
 const openFollowup=index=>{
   const record=(current?.followups||[])[index]||{};
@@ -131,14 +134,13 @@ return <div className="shell">
 {!sidebarCollapsed&&<p className="sidebar-foot">CLIENT MANAGEMENT SYSTEM</p>}
 </aside>
 <div className="work">
-<WorkspaceTabs tabs={tabs} activeId={activeTabId} onActivate={tab=>switchView(tab.screen,tab.clientId||clientId,tab.caseId||caseId)} onClose={closeWorkspace} onHome={()=>switchView('Home')}/>
 <main>
-{screen==='Case Detail'&&<nav className="case-crumb" aria-label="Case hierarchy"><button type="button" onClick={()=>switchView('Clients')}>Clients</button><span>›</span><button type="button" onClick={()=>switchView('Client Detail')}>{client.name}</button><span>›</span><strong>{current?.form||'Case'} Case</strong></nav>}
-{!['Home','Client Detail','Enrolled Cases','Follow-ups','Exited Cases','Settings'].includes(screen)&&<header className="page-head"><div><h1>{pageTitle}</h1><p>{screen==='Client Detail'?'Client ID: '+client.id:screen==='Case Detail'?'Application #: '+(current?.applicationNumber||'Not assigned'):'Internal case management workspace'}</p></div><div className="actions">{screen==='Client Detail'&&<><Button onClick={startProfile}>Edit Profile</Button><Button kind="primary" onClick={()=>show('New Enrollment')}>+ Start New Enrollment</Button></>}{screen==='Case Detail'&&<Button onClick={()=>switchView('Client Detail')}>← Back to {client.name}</Button>}</div></header>}
+<BreadcrumbNav screen={screen} client={client} record={current} onNavigate={navigateBreadcrumb} onBack={goBack} backLabel={backLabel}/>
+{!['Home','Client Detail','Enrolled Cases','Follow-ups','Exited Cases','Settings'].includes(screen)&&<header className="page-head"><div><h1>{pageTitle}</h1><p>{screen==='Client Detail'?'Client ID: '+client.id:screen==='Case Detail'?'Application #: '+(current?.applicationNumber||'Not assigned'):'Internal case management workspace'}</p></div><div className="actions">{screen==='Client Detail'&&<><Button onClick={startProfile}>Edit Profile</Button><Button kind="primary" onClick={()=>show('New Enrollment')}>+ Start New Enrollment</Button></>}</div></header>}
 {screen==='Home'&&<HomeDashboard clients={clients} onOpenClient={openClient} onOpenCase={openCase} onSearch={openSearchResults} onAddClient={()=>show('New Client')} onReady={()=>{if(switchView('Enroll Clients'))setQuery('')}} onExited={openExited} onEnrolled={()=>switchView('Enrolled Cases')} onFollowups={()=>switchView('Follow-ups')} onCalendar={()=>switchView('Calendar')} homeSettings={homeSettings} onCustomize={()=>switchView('Settings')}/>}
 {['Enrolled Cases','Follow-ups','Exited Cases'].includes(screen)&&<CaseList mode={screen} clients={clients} onOpenCase={openCase} onHome={()=>switchView('Home')}/>}
 
-{screen==='Enroll Clients'&&<><nav className="case-crumb"><button type="button" onClick={()=>switchView('Home')}>Home</button><span>›</span><strong>Ready for Enroll</strong></nav><Card title={'Ready for Enroll — Clients ('+ready.length+')'}>{ready.length?ready.map(c=><button key={c.id} className="ready-client-row" onClick={()=>openClient(c.id)}><span>{c.name}</span><span>›</span></button>):<p className="muted">No clients currently marked Ready for Enroll.</p>}</Card></>}
+{screen==='Enroll Clients'&&<><Card title={'Ready for Enroll — Clients ('+ready.length+')'}>{ready.length?ready.map(c=><button key={c.id} className="ready-client-row" onClick={()=>openClient(c.id)}><span>{c.name}</span><span>›</span></button>):<p className="muted">No clients currently marked Ready for Enroll.</p>}</Card></>}
 
 {screen==='Clients'&&<Card title={clientListFilter==='Exited'?'Exited Clients':'All Clients'}>{clients.filter(c=> (clientListFilter!=='Exited'||c.cases.some(r=>getStatus(r)==='Exited')) && (!query.trim()||(c.name+' '+c.id+' '+(c.phone||'')+' '+c.cases.map(r=>r.applicationNumber).join(' ')).toLowerCase().includes(query.toLowerCase()))).map(c=><div key={c.id} className="item" onClick={()=>openClient(c.id)}>{c.name} · {c.id}<span>Open →</span></div>)}</Card>}
 {screen==='Calendar'&&<Card title="Upcoming Appointments"><p>9:30 AM · Lihua Zhang — Document Review</p><p>11:00 AM · Ming Chen — Enrollment</p><p>2:00 PM · Jason Lee — Job Search Support</p><p className="muted">Synthetic appointments for demonstration; calendar integration is planned.</p></Card>}
@@ -147,7 +149,7 @@ return <div className="shell">
  if(!profile.name?.trim()){flash('Name is required');return;}
  changeClient(client.id,c=>({...c,name:profile.name,phone:profile.phone,email:profile.email,employment:profile.employment,status:profile.status,program:profile.program}));
  setEditing(false);flash('Profile saved locally');
-}} onBack={()=>switchView('Clients')} onNewCase={()=>show('New Enrollment')} onOpenCase={record=>openCase(record)} onUpload={kind=>{show('Client File');setFields({kind})}} onAddVisit={()=>show('Visit Note')}/>}
+}} onNewCase={()=>show('New Enrollment')} onOpenCase={record=>openCase(record)} onUpload={kind=>{show('Client File');setFields({kind})}} onAddVisit={()=>show('Visit Note')}/>}
 
 {screen==='Case Detail'&&current&&<><Card title="Case Summary"><FormRows items={[['Form Type',current.form],['Application Date',current.applicationDate],['Application Number',current.applicationNumber],['Enrollment Date',current.enrollmentDate],['Exit Date',current.exit?.date],['Case Status',getStatus(current)]]}/><div className="right"><Button onClick={()=>{show('Case Summary');setFields({applicationDate:current.applicationDate,applicationNumber:current.applicationNumber,enrollmentDate:current.enrollmentDate})}}>Edit Summary</Button>{!current.enrolled&&<Button kind="primary" onClick={()=>{changeCase(c=>({...c,enrolled:true,enrollmentDate:c.enrollmentDate||today()}));flash('Enrollment recorded')}}>Mark Enrolled</Button>}</div></Card>
 <Card title="Enrollment Form"><Button onClick={()=>switchView('Form Editor')}>Open / Edit Form</Button><span className="muted"> Form editing does not create an additional Case.</span></Card>
@@ -161,7 +163,7 @@ return <div className="shell">
 </tr>})}
 </tbody></table></div>
 </Card></>}
-{screen==='Form Editor'&&current&&<><Button onClick={()=>switchView('Case Detail')}>← Back to Case Detail</Button><div className="editor"><Card title="Editable Fields"><Input label="Application Date" value={current.applicationDate} onChange={v=>changeCase(c=>({...c,applicationDate:v}))}/><Input label="Application Number" value={current.applicationNumber} onChange={v=>changeCase(c=>({...c,applicationNumber:v}))}/><Input label="Client Name" value={client.name} onChange={()=>{}}/><p className="muted">Additional PDF field mappings are planned. Current inputs save to the browser demo state.</p></Card><Card title="PDF Preview"><div className="pdf-placeholder"><b>{current.form} Form</b><p>Actual PDF rendering and mapping will be connected in a later phase.</p></div></Card></div></>}
+{screen==='Form Editor'&&current&&<><div className="editor"><Card title="Editable Fields"><Input label="Application Date" value={current.applicationDate} onChange={v=>changeCase(c=>({...c,applicationDate:v}))}/><Input label="Application Number" value={current.applicationNumber} onChange={v=>changeCase(c=>({...c,applicationNumber:v}))}/><Input label="Client Name" value={client.name} onChange={()=>{}}/><p className="muted">Additional PDF field mappings are planned. Current inputs save to the browser demo state.</p></Card><Card title="PDF Preview"><div className="pdf-placeholder"><b>{current.form} Form</b><p>Actual PDF rendering and mapping will be connected in a later phase.</p></div></Card></div></>}
 </main></div>
 {modal&&<div className="backdrop" onClick={()=>setModal('')}><div className="dialog" onClick={e=>e.stopPropagation()}><div className="modal-head"><h2>{({ 'New Enrollment':'Start New Enrollment','Add Follow-up':'Record Follow-up','Client File':'Upload Client Document'})[modal]||modal}</h2><Button onClick={()=>setModal('')}>✕</Button></div>
 {modal==='New Enrollment'&&<><p>Select the form type for a new independent Draft Case.</p><label className="choice"><input type="radio" checked={formChoice==='201'} onChange={()=>setFormChoice('201')}/> 201 — WIOA Adult</label><label className="choice"><input type="radio" checked={formChoice==='999'} onChange={()=>setFormChoice('999')}/> 999 — General Fund</label><div className="right"><Button onClick={()=>setModal('')}>Cancel</Button><Button kind="primary" onClick={createEnrollment}>Create Draft</Button></div></>}
@@ -171,7 +173,7 @@ return <div className="shell">
 {modal==='Select Existing File'&&<><p>Choose an existing file already stored in this client's profile.</p><select className="wide-input" value={documentName} onChange={e=>setDocumentName(e.target.value)}><option value="">Select file</option>{client.docs.map((d,i)=><option key={i} value={d.name}>{d.name}</option>)}</select><Button kind="primary" onClick={()=>{if(documentName)selectFile(documentName)}}>Select File</Button></>}
 {modal==='Upload New File'&&<><p>Upload is simulated; only the selected filename is retained in browser storage.</p><label className="input"><span>Document Type</span><select><option>EV / Paystub</option><option>Employer Signature</option></select></label><input type="file" onChange={e=>setDocumentName(e.target.files?.[0]?.name||'')}/><Button kind="primary" onClick={()=>{if(documentName)selectFile(documentName)}}>Upload & Link</Button></>}
 {modal==='Edit Follow-up'&&<>
- <div className="fu-modal-context"><strong>{client.name} · {current?.form} Case</strong><span>Follow-up {followIndex+1}</span></div>
+ <nav className="followup-breadcrumb" aria-label="Follow-up hierarchy"><span>{client.name}</span><span>›</span><span>{current?.form} Case</span><span>›</span><strong>Follow-up {followIndex+1}</strong></nav>
  <Input type="date" label="Completed Date" value={fields.date} onChange={value=>setFields(f=>({...f,date:value}))}/>
  <label className="input"><span>Notes (optional)</span><textarea rows="3" value={fields.note||''} onChange={e=>setFields(f=>({...f,note:e.target.value}))} placeholder="Follow-up notes"/></label>
  <div className="fu-file-picker"><label>Follow-up File</label><p>Currently linked: <strong>{fields.file||'No file selected'}</strong></p>

@@ -31,3 +31,6 @@
 .fu-source-switch button.selected{background:#e9eff4;color:#253c50;border-color:#97acbf;font-weight:700}
 .fu-modal-actions{display:flex;justify-content:flex-end;gap:9px}
 .dialog textarea{display:block;resize:vertical;width:100%;margin:9px 0 16px;border:1px solid #d9e1e9;border-radius:7px;padding:12px;font:inherit;color:#344758}
+
+/* Breadcrumb-only navigation v4: no browser-style workspace tabs. */
+.work>main{max-width:1220px;padding-top:28px}

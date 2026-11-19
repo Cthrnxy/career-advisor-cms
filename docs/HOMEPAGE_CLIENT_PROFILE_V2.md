@@ -42,3 +42,11 @@ PDF form field mapping, real file storage and preview, full document audit/versi
 - Homepage Enrolled and Follow-up previews remain capped at **five Cases** each, regardless of visual customization; View All goes to the complete appropriate Case list.
 - Preference changes apply immediately and are saved in a separate browser localStorage key; no backend, user-account sync, or cross-device persistence.
 - Layout preferences do not change any Case business rules or underlying data.
+
+## Navigation v4.0 — Breadcrumbs (replaces Browser Tabs)
+- **Browser-style top tabs are removed.** The left sidebar remains unchanged.
+- A single in-page breadcrumb at the **top left** shows Home → Client Profile → Enrollment Case and, inside its editor, Follow-up round. Parent links navigate to their respective screens.
+- The back arrow follows the **previously visited screen**, not necessarily the immediate structural parent. For example, Home → Case Detail → Back returns to Home. Client Profile remains clickable in the Case breadcrumb.
+- Client Profile, Settings, Ready for Enroll, Case lists and Form Editor use the same single breadcrumb system; duplicate back links are removed.
+- A back navigation from a profile with unsaved edits still asks before discarding changes. Creating a new Case records its previous Client Profile in navigation history.
+- Dashboard custom-module preferences, five-Case preview caps, and all Case business rules are preserved.

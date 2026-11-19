@@ -6,7 +6,6 @@ export default function HomepageSettings({value,onChange,onGoHome}){
  const settings=normalizeHomeSettings(value);
  const labels=new Map(HOME_MODULES.map(module=>[module.id,module]));
  return <div className="homepage-settings">
-   <nav className="settings-breadcrumb"><button onClick={onGoHome}>Home</button><span>›</span><strong>Settings</strong></nav>
    <header className="settings-intro">
      <div><span className="settings-eyebrow">WORKSPACE PREFERENCES</span><h1>Customize Homepage</h1><p>Choose what appears on your dashboard and the order you want to see it.</p></div>
      <button type="button" className="settings-preview-button" onClick={onGoHome}>View Homepage &nbsp;›</button>

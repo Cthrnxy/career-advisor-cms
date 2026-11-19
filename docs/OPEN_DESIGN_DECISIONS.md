@@ -5,7 +5,7 @@ This is the **discussion backlog**, not a specification claiming unresolved inte
 ## Confirmed / preserve these
 
 - Homepage v2.0 extends the v1.0 greeting, search, Quick Access, Appointments and To-do design with Enrolled and Follow-up Case-based tables, each showing at most five records and linking directly to Case Detail. See `HOMEPAGE_CLIENT_PROFILE_V2.md`.
-- Top navigation v1.3: Browser-style Tabs **only**, no separate Breadcrumb row; parent client/case views remain reachable through their open tabs and the existing Back to Client / Back to Case actions.
+- Navigation v4.0: browser-style top Tabs removed. A unified breadcrumb appears at the top left on non-Home pages; it has clickable hierarchy and an explicit Back button following actual recent navigation. See `HOMEPAGE_CLIENT_PROFILE_V2.md`.
 - Client Profile contains one combined 201/999 Enrollment Records table; each row opens its independent Case Detail.
 - Start New Enrollment explicitly selects 201 or 999 and creates an independent Draft; a profile edit or file upload does not generate a case.
 - Client status and Case status are separate.
