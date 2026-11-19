@@ -1,6 +1,6 @@
 # Homepage v2.0 and Client Profile v2.0 — Confirmed UI
 
-Both screens use existing Browser-style Tabs v1.3 (no top breadcrumb bar). Client Profile and Case Detail display their own small hierarchical back links.
+Navigation update: **Breadcrumb-only navigation v4.0** has replaced Browser-style Tabs. The left sidebar remains, and each non-Home page has one back arrow and clickable hierarchy at the top left.
 
 ## Homepage
 - **Enrolled (Not Exited):** Case-based; display at most five records with Client Name, Program, Form Type, Enrollment Date, Last Activity, Days Enrolled. Clicking opens **that Case Detail**. View All opens full Enrolled Case list.

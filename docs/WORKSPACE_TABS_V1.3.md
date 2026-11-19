@@ -1,3 +1,7 @@
+# Historical design — superseded by Breadcrumb Navigation v4.0
+
+> This file documents the older Tabs v1.3 exploration. Its code has been removed. The current navigation rules are in `HOMEPAGE_CLIENT_PROFILE_V2.md` under Navigation v4.0.
+
 # Workspace navigation v1.3 — Browser Tabs only
 
 ## Confirmed design
