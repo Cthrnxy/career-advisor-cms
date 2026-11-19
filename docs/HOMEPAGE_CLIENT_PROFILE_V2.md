@@ -37,7 +37,7 @@ PDF form field mapping, real file storage and preview, full document audit/versi
 ## Homepage v3.0 — Custom Dashboard in Settings
 - Settings > Customize Homepage controls dashboard module visibility and order, and chooses Comfortable or Compact spacing.
 - Modules: Quick Access, Appointments, To-do, Enrolled (Not Exited), Follow-up.
-- Client search, sidebar navigation, and workspace tabs are always available, even when every optional module is hidden.
+- Client search, sidebar navigation, and the top-left breadcrumb (on non-Home pages) remain available even when every optional Homepage module is hidden.
 - Default arrangement matches Homepage v2.0. Appointments and To-do can share a row; larger modules use a full-width row.
 - Homepage Enrolled and Follow-up previews remain capped at **five Cases** each, regardless of visual customization; View All goes to the complete appropriate Case list.
 - Preference changes apply immediately and are saved in a separate browser localStorage key; no backend, user-account sync, or cross-device persistence.
@@ -45,8 +45,8 @@ PDF form field mapping, real file storage and preview, full document audit/versi
 
 ## Navigation v4.0 — Breadcrumbs (replaces Browser Tabs)
 - **Browser-style top tabs are removed.** The left sidebar remains unchanged.
-- A single in-page breadcrumb at the **top left** shows Home → Client Profile → Enrollment Case and, inside its editor, Follow-up round. Parent links navigate to their respective screens.
-- The back arrow follows the **previously visited screen**, not necessarily the immediate structural parent. For example, Home → Case Detail → Back returns to Home. Client Profile remains clickable in the Case breadcrumb.
+- Confirmed breadcrumb: **Home → Clients → Client Name → Enrollment Case** (and **→ Enrollment Form** when editing the form). The Follow-up modal shows Client Name → Case → Follow-up Round. Every ancestor link navigates to that page.
+- The back arrow follows the **actual previously visited screen**, not necessarily the immediate structural parent. For example, Home → Case Detail → Back returns to Home; Client Profile and Clients are independently clickable in the Case breadcrumb.
 - Client Profile, Settings, Ready for Enroll, Case lists and Form Editor use the same single breadcrumb system; duplicate back links are removed.
 - A back navigation from a profile with unsaved edits still asks before discarding changes. Creating a new Case records its previous Client Profile in navigation history.
 - Dashboard custom-module preferences, five-Case preview caps, and all Case business rules are preserved.

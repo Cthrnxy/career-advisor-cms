@@ -5,7 +5,7 @@ This is the **discussion backlog**, not a specification claiming unresolved inte
 ## Confirmed / preserve these
 
 - Homepage v2.0 extends the v1.0 greeting, search, Quick Access, Appointments and To-do design with Enrolled and Follow-up Case-based tables, each showing at most five records and linking directly to Case Detail. See `HOMEPAGE_CLIENT_PROFILE_V2.md`.
-- Navigation v4.0: browser-style top Tabs removed. A unified breadcrumb appears at the top left on non-Home pages; it has clickable hierarchy and an explicit Back button following actual recent navigation. See `HOMEPAGE_CLIENT_PROFILE_V2.md`.
+- Navigation v4.1: browser-style Tabs removed. On Case Detail the top-left path is **Home → Clients → Client Name → Case**; the separate Back button follows the actual previously visited page. Form Editor extends the same path. See `HOMEPAGE_CLIENT_PROFILE_V2.md`.
 - Client Profile contains one combined 201/999 Enrollment Records table; each row opens its independent Case Detail.
 - Start New Enrollment explicitly selects 201 or 999 and creates an independent Draft; a profile edit or file upload does not generate a case.
 - Client status and Case status are separate.
@@ -36,7 +36,7 @@ This is the **discussion backlog**, not a specification claiming unresolved inte
 ### 4. 201 / 999 Form Editor
 - Real PDF mapping and preview (left form editor, right PDF page), page navigation, skip logic and validation hints.
 - Save Draft, PDF download/export and a clear indication of mapped vs unmapped fields.
-- Managing and recovering *unsaved* per-case form drafts when switching or closing tabs; the current demo edits save immediately to local browser storage.
+- Managing and recovering *unsaved* per-case form drafts when navigating between pages; the current demo edits save immediately to local browser storage.
 
 ### 5. Calendar, appointments, To-do and Workday
 - Appointment creation/edit/reschedule, link to client profiles, notifications and calendar view.
@@ -45,7 +45,7 @@ This is the **discussion backlog**, not a specification claiming unresolved inte
 
 ### 6. App-wide decisions and future implementation
 - Program workspace/root selection (NJC/HCA/HOSP), independent of the removed Breadcrumb: decide if this affects search scope, dashboard, or client lists.
-- Persisting open tabs and drafts across refresh/devices, handling simultaneous edits and restoring closed tabs.
+- Persisting page state and drafts across refresh/devices, handling simultaneous edits, and preserving navigation context after reload.
 - Reusable component design system, backend data layer, user permissions, secure document storage and audit logs.
 - Existing Vercel preview is protected; the GitHub repository is separate from the old PDF desktop project.
 

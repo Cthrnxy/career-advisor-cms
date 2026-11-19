@@ -25,12 +25,13 @@ export function getRouteLabel(route,client,record){
 export function getBreadcrumbs(screen,client,record){
  const home={label:'Home',screen:'Home'};
  const name=client?.name||'Client Profile';
+ const clientsItem={label:'Clients',screen:'Clients'};
  const clientItem={label:name,screen:'Client Detail',clientId:client?.id};
  const caseItem={label:(record?.form||'Enrollment')+' Case',screen:'Case Detail',clientId:client?.id,caseId:record?.id};
  if(screen==='Home')return [];
- if(screen==='Client Detail')return [home,{label:'Clients',screen:'Clients'},clientItem];
- if(screen==='Case Detail')return [home,clientItem,caseItem];
- if(screen==='Form Editor')return [home,clientItem,caseItem,{label:'Enrollment Form',screen:'Form Editor',clientId:client?.id,caseId:record?.id}];
+ if(screen==='Client Detail')return [home,clientsItem,clientItem];
+ if(screen==='Case Detail')return [home,clientsItem,clientItem,caseItem];
+ if(screen==='Form Editor')return [home,clientsItem,clientItem,caseItem,{label:'Enrollment Form',screen:'Form Editor',clientId:client?.id,caseId:record?.id}];
  const labels={
   'Enroll Clients':'Ready for Enroll',
   'Enrolled Cases':'Enrolled Cases',

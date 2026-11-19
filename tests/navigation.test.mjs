@@ -14,10 +14,12 @@ test('breadcrumbs always express client, enrollment case, and follow-up structur
   const record={id:'case-201',form:'201'};
   assert.deepEqual(getBreadcrumbs('Home',client,record),[]);
   assert.deepEqual(getBreadcrumbs('Client Detail',client,record).map(x=>x.label),['Home','Clients','Mei Chen']);
-  assert.deepEqual(getBreadcrumbs('Case Detail',client,record).map(x=>x.label),['Home','Mei Chen','201 Case']);
-  assert.deepEqual(getBreadcrumbs('Form Editor',client,record).map(x=>x.label),['Home','Mei Chen','201 Case','Enrollment Form']);
+  assert.deepEqual(getBreadcrumbs('Case Detail',client,record).map(x=>x.label),['Home','Clients','Mei Chen','201 Case']);
+  assert.deepEqual(getBreadcrumbs('Form Editor',client,record).map(x=>x.label),['Home','Clients','Mei Chen','201 Case','Enrollment Form']);
   assert.deepEqual(getBreadcrumbs('Follow-ups',client,record).map(x=>x.label),['Home','Follow-up Cases']);
-  assert.equal(getBreadcrumbs('Case Detail',client,record)[1].screen,'Client Detail');
+  assert.equal(getBreadcrumbs('Case Detail',client,record)[1].screen,'Clients');
+  assert.equal(getBreadcrumbs('Case Detail',client,record)[2].screen,'Client Detail');
+  assert.equal(getBreadcrumbs('Case Detail',client,record)[3].caseId,'case-201');
 });
 test('back history stores the actual prior screen regardless of breadcrumb hierarchy',()=>{
  const prior={screen:'Home',clientId:'CL-1024',caseId:'case-201'};
