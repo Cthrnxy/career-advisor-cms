@@ -32,3 +32,13 @@ Both screens use existing Browser-style Tabs v1.3 (no top breadcrumb bar). Clien
 
 ## Still future work
 PDF form field mapping, real file storage and preview, full document audit/version history, program-based readiness checklist validation, calendar scheduling and backend permissions require separate specification.
+
+
+## Homepage v3.0 — Custom Dashboard in Settings
+- Settings > Customize Homepage controls dashboard module visibility and order, and chooses Comfortable or Compact spacing.
+- Modules: Quick Access, Appointments, To-do, Enrolled (Not Exited), Follow-up.
+- Client search, sidebar navigation, and workspace tabs are always available, even when every optional module is hidden.
+- Default arrangement matches Homepage v2.0. Appointments and To-do can share a row; larger modules use a full-width row.
+- Homepage Enrolled and Follow-up previews remain capped at **five Cases** each, regardless of visual customization; View All goes to the complete appropriate Case list.
+- Preference changes apply immediately and are saved in a separate browser localStorage key; no backend, user-account sync, or cross-device persistence.
+- Layout preferences do not change any Case business rules or underlying data.

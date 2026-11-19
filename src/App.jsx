@@ -3,10 +3,14 @@ import HomeDashboard from './features/home/HomeDashboard.jsx';
 import CaseList from './features/home/CaseList.jsx';
 import ClientProfile from './features/client/ClientProfile.jsx';
 import {followupCount} from './caseWorkflow.js';
+import HomepageSettings from './features/settings/HomepageSettings.jsx';
+import {DEFAULT_HOME_SETTINGS,normalizeHomeSettings} from './homeSettings.js';
 import WorkspaceTabs from './layouts/WorkspaceTabs.jsx';
 import {getTabId,getTabTitle} from './layouts/navigation.js';
 import {demoClients,getStatus,makeCase,DOCUMENT_TYPES,uid} from './data.js';
 const STORE='career-advisor-cms-synthetic-v01';
+const HOME_SETTINGS_STORE='career-advisor-cms-home-preferences-v01';
+const loadHomeSettings=()=>{try{return normalizeHomeSettings(JSON.parse(localStorage.getItem(HOME_SETTINGS_STORE)))}catch{return normalizeHomeSettings(DEFAULT_HOME_SETTINGS)}};
 const load=()=>{try{const saved=JSON.parse(localStorage.getItem(STORE));if(!Array.isArray(saved))return demoClients;const known=new Set(saved.map(c=>c.id));return [...saved,...demoClients.filter(c=>!known.has(c.id))]}catch{return demoClients}};
 const today=()=>new Date().toISOString().slice(0,10);
 function Button({children,onClick,kind='secondary',disabled=false}){return <button type="button" onClick={onClick} className={'btn '+kind} disabled={disabled}>{children}</button>}
@@ -16,6 +20,7 @@ function Input({label,value,onChange,type='text',placeholder=''}){return <label 
 function FormRows({items}){return <div className="field-grid">{items.map(([k,v])=><Label key={k} text={k} value={v}/>)}</div>}
 function App(){
 const[clients,setClients]=useState(load);
+const[homeSettings,setHomeSettings]=useState(loadHomeSettings);
 const[screen,setScreen]=useState('Home');
 const[clientId,setClientId]=useState('CL-1024');
 const[caseId,setCaseId]=useState('case-201');
@@ -33,6 +38,7 @@ const[documentName,setDocumentName]=useState('');
 const[followupSource,setFollowupSource]=useState('existing');
 const[message,setMessage]=useState('');
 useEffect(()=>localStorage.setItem(STORE,JSON.stringify(clients)),[clients]);
+useEffect(()=>{try{localStorage.setItem(HOME_SETTINGS_STORE,JSON.stringify(homeSettings))}catch{}},[homeSettings]);
 const client=clients.find(c=>c.id===clientId)||clients[0];
 const current=client.cases.find(c=>c.id===caseId);
 const activeTabId=getTabId(screen,clientId,caseId);
@@ -128,15 +134,15 @@ return <div className="shell">
 <WorkspaceTabs tabs={tabs} activeId={activeTabId} onActivate={tab=>switchView(tab.screen,tab.clientId||clientId,tab.caseId||caseId)} onClose={closeWorkspace} onHome={()=>switchView('Home')}/>
 <main>
 {screen==='Case Detail'&&<nav className="case-crumb" aria-label="Case hierarchy"><button type="button" onClick={()=>switchView('Clients')}>Clients</button><span>›</span><button type="button" onClick={()=>switchView('Client Detail')}>{client.name}</button><span>›</span><strong>{current?.form||'Case'} Case</strong></nav>}
-{!['Home','Client Detail','Enrolled Cases','Follow-ups','Exited Cases'].includes(screen)&&<header className="page-head"><div><h1>{pageTitle}</h1><p>{screen==='Client Detail'?'Client ID: '+client.id:screen==='Case Detail'?'Application #: '+(current?.applicationNumber||'Not assigned'):'Internal case management workspace'}</p></div><div className="actions">{screen==='Client Detail'&&<><Button onClick={startProfile}>Edit Profile</Button><Button kind="primary" onClick={()=>show('New Enrollment')}>+ Start New Enrollment</Button></>}{screen==='Case Detail'&&<Button onClick={()=>switchView('Client Detail')}>← Back to {client.name}</Button>}</div></header>}
-{screen==='Home'&&<HomeDashboard clients={clients} onOpenClient={openClient} onOpenCase={openCase} onSearch={openSearchResults} onAddClient={()=>show('New Client')} onReady={()=>{if(switchView('Enroll Clients'))setQuery('')}} onExited={openExited} onEnrolled={()=>switchView('Enrolled Cases')} onFollowups={()=>switchView('Follow-ups')} onCalendar={()=>switchView('Calendar')}/>}
+{!['Home','Client Detail','Enrolled Cases','Follow-ups','Exited Cases','Settings'].includes(screen)&&<header className="page-head"><div><h1>{pageTitle}</h1><p>{screen==='Client Detail'?'Client ID: '+client.id:screen==='Case Detail'?'Application #: '+(current?.applicationNumber||'Not assigned'):'Internal case management workspace'}</p></div><div className="actions">{screen==='Client Detail'&&<><Button onClick={startProfile}>Edit Profile</Button><Button kind="primary" onClick={()=>show('New Enrollment')}>+ Start New Enrollment</Button></>}{screen==='Case Detail'&&<Button onClick={()=>switchView('Client Detail')}>← Back to {client.name}</Button>}</div></header>}
+{screen==='Home'&&<HomeDashboard clients={clients} onOpenClient={openClient} onOpenCase={openCase} onSearch={openSearchResults} onAddClient={()=>show('New Client')} onReady={()=>{if(switchView('Enroll Clients'))setQuery('')}} onExited={openExited} onEnrolled={()=>switchView('Enrolled Cases')} onFollowups={()=>switchView('Follow-ups')} onCalendar={()=>switchView('Calendar')} homeSettings={homeSettings} onCustomize={()=>switchView('Settings')}/>}
 {['Enrolled Cases','Follow-ups','Exited Cases'].includes(screen)&&<CaseList mode={screen} clients={clients} onOpenCase={openCase} onHome={()=>switchView('Home')}/>}
 
 {screen==='Enroll Clients'&&<><nav className="case-crumb"><button type="button" onClick={()=>switchView('Home')}>Home</button><span>›</span><strong>Ready for Enroll</strong></nav><Card title={'Ready for Enroll — Clients ('+ready.length+')'}>{ready.length?ready.map(c=><button key={c.id} className="ready-client-row" onClick={()=>openClient(c.id)}><span>{c.name}</span><span>›</span></button>):<p className="muted">No clients currently marked Ready for Enroll.</p>}</Card></>}
 
 {screen==='Clients'&&<Card title={clientListFilter==='Exited'?'Exited Clients':'All Clients'}>{clients.filter(c=> (clientListFilter!=='Exited'||c.cases.some(r=>getStatus(r)==='Exited')) && (!query.trim()||(c.name+' '+c.id+' '+(c.phone||'')+' '+c.cases.map(r=>r.applicationNumber).join(' ')).toLowerCase().includes(query.toLowerCase()))).map(c=><div key={c.id} className="item" onClick={()=>openClient(c.id)}>{c.name} · {c.id}<span>Open →</span></div>)}</Card>}
 {screen==='Calendar'&&<Card title="Upcoming Appointments"><p>9:30 AM · Lihua Zhang — Document Review</p><p>11:00 AM · Ming Chen — Enrollment</p><p>2:00 PM · Jason Lee — Job Search Support</p><p className="muted">Synthetic appointments for demonstration; calendar integration is planned.</p></Card>}
-{screen==='Settings'&&<Card title="Settings"><p>This is a frontend-only prototype using synthetic data. No backend or real client files are connected.</p></Card>}
+{screen==='Settings'&&<HomepageSettings value={homeSettings} onChange={setHomeSettings} onGoHome={()=>switchView('Home')}/>}
 {screen==='Client Detail'&&<ClientProfile client={client} editing={editing} profile={profile} onProfileChange={setProfile} onEdit={startProfile} onCancel={()=>setEditing(false)} onSave={()=>{
  if(!profile.name?.trim()){flash('Name is required');return;}
  changeClient(client.id,c=>({...c,name:profile.name,phone:profile.phone,email:profile.email,employment:profile.employment,status:profile.status,program:profile.program}));

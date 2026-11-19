@@ -16,3 +16,31 @@
 .case-list-heading h1{font-size:29px;margin:7px 0}
 .case-list-heading p{color:#8595a4;font-size:12px;margin:0}
 .case-list-total{background:#edf2f6;border-radius:20px;padding:9px 13px;color:#4a6279;font-size:12px;font-weight:700}
+
+/* Homepage v3: user-configurable modules, preserving five-row Case previews */
+.home-custom-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:6px 0 17px}
+.home-custom-heading h2{font-size:19px;margin:0 0 5px}
+.home-custom-heading p{margin:0;font-size:11px;color:#8b9ba8}
+.home-custom-heading button{background:white;border:1px solid #d5dfe8;border-radius:8px;padding:10px 14px;color:#405d74;font-size:12px;font-weight:650;cursor:pointer;white-space:nowrap}
+.home-custom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;align-items:stretch}
+.home-widget{min-width:0;align-self:stretch}
+.home-widget-full{grid-column:span 2}
+.home-widget-half{grid-column:span 1}
+.home-widget .home-enrolled{margin-top:0;height:100%}
+.home-widget .home-panel:not(.home-enrolled){height:100%}
+.home-quick-module .home-shortcuts{margin:0}
+.home-quick-module .home-heading h2{margin:0 0 14px}
+.home-custom .home-panelhead{min-height:56px}
+.home-compact .home-custom-grid{gap:10px}
+.home-compact .home-panel{padding-left:12px;padding-right:12px}
+.home-compact .home-appointment{min-height:38px;padding:6px 3px}
+.home-compact .home-task{min-height:30px}
+.home-compact .home-enrolled td,.home-compact .home-enrolled th{padding:8px 9px}
+.home-compact .home-shortcuts button{height:59px}
+.home-compact .home-shortcuts{gap:9px}
+.home-custom-empty{border:1px dashed #bdcbd7;background:white;border-radius:10px;padding:36px;text-align:center}
+.home-custom-empty h3{font-size:17px;margin:0 0 7px}
+.home-custom-empty p{font-size:12px;color:#8495a2}
+.home-custom-empty button{border:1px solid #b8c7d4;border-radius:8px;background:#edf2f6;padding:10px 14px;color:#415b70;cursor:pointer}
+@media(max-width:1090px){.home-custom-grid{grid-template-columns:1fr}.home-widget-half,.home-widget-full{grid-column:span 1}}
+@media(max-width:710px){.home-custom-heading{align-items:flex-start;flex-direction:column}}
