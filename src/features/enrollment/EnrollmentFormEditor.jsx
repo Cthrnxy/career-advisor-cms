@@ -130,12 +130,11 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
     onSave();
   };
   const allIssues = Object.values(issueByPage).flat();
-  const completed = [1,2,3,4].filter(n=>checked[n] && issueByPage[n].length===0).length;
   const selectOptions = (id,label,items,focusGroup) => <Choice id={id} label={label} value={values[id]} options={items} issue={issue(id)} onFocus={()=>setFocus(focusGroup||id)} onChange={v=>update(id,v)}/>;
   const input = (id,label,extra={}) => <Field id={id} label={label} value={values[id]} onChange={v=>update(id,v)} issue={issue(id)} onFocus={()=>setFocus(id)} {...extra}/>;
   const formPanel = (
     <section className="ef-editor">
-        <div className="ef-section-head"><div><span className="ef-overline">{reviewMode?'REVIEW MODE':'PAGE '+page+' OF 12'}</span><h3>{reviewMode?'Form Check & Review':EDITOR_PAGES[page-1]}</h3><p>{reviewMode?'Review missing and potentially incorrect answers before exporting.':'Follow the original form order. Save and revisit any page.'}</p></div><div className="ef-heading-actions">{!floating.form&&<button type="button" className="ef-btn ef-popout-btn" onClick={()=>popOut('form')} title="Open the form as a movable, resizable window">Pop Out Form ↗</button>}{!showPreview&&<button type="button" className="ef-btn" onClick={()=>setShowPreview(true)}>Show Preview</button>}{!reviewMode&&<span className={'ef-page-state'+(page>MAPPED_PAGES?' muted':checked[page]&&issues.length?' warning':'')}>{page>MAPPED_PAGES?'Mapping pending':checked[page]?(issues.length?issues.length+' issues':'Checked · clear'):'Not checked'}</span>}</div></div>
+        <div className="ef-section-head"><div><h3>{reviewMode?'Form Check & Review':EDITOR_PAGES[page-1]}</h3><p>{reviewMode?'Review missing and potentially incorrect answers before exporting.':'Follow the original form order. Save and revisit any page.'}</p></div><div className="ef-heading-actions">{!floating.form&&<button type="button" className="ef-btn ef-popout-btn" onClick={()=>popOut('form')} title="Open the form as a movable, resizable window">Pop Out Form ↗</button>}{!showPreview&&<button type="button" className="ef-btn" onClick={()=>setShowPreview(true)}>Show Preview</button>}{!reviewMode&&<span className={'ef-page-state'+(page>MAPPED_PAGES?' muted':checked[page]&&issues.length?' warning':'')}>{page>MAPPED_PAGES?'Mapping pending':checked[page]?(issues.length?issues.length+' issues':'Checked · clear'):'Not checked'}</span>}</div></div>
         {reviewMode&&<div className="ef-review-panel" role="region" aria-label="Enrollment form review">
           <div className="ef-review-overview"><strong>{allIssues.length} items found on mapped pages</strong><p>Review the list below. Pages 5–12 are still awaiting field mapping, so this prototype cannot confirm the entire 201 application is ready for enrollment.</p></div>
           {allIssues.length?allIssues.map((item,i)=><button type="button" className="ef-review-issue" key={item.page+'-'+item.key+'-'+i} onClick={()=>{goPage(item.page);setReviewMode(false)}}><span>Page {item.page}</span><strong>{item.label}</strong><small>{item.message}</small><b>›</b></button>):<p className="ef-review-clear">No issues detected on the four mapped pages.</p>}
@@ -184,12 +183,8 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
   );
   return <div className="ef-app">
     <div className="ef-toolbar">
-      <div><span className="ef-overline">ENROLLMENT / 201 · WIOA ADULT</span><h2>201 Master Application</h2><p>Complete the form in CMS · compare with the original page order</p></div>
+      <div><h2>201 Master Application</h2></div>
       <div className="ef-toolbar-actions"><span className="ef-autosave">● Browser draft</span><button className="ef-btn" onClick={onSave}>Save Draft</button>{reviewMode?<button className="ef-btn ef-btn-primary" onClick={()=>setReviewMode(false)}>Continue Editing</button>:<button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enrollment ↗</button>}</div>
-    </div>
-    <div className="ef-statusline">
-      <div><strong>{completed} of 4</strong> mapped pages checked <span>· Pages 5–12 awaiting mapping</span></div>
-      <div className="ef-status-actions">{reviewMode?<span className="ef-review-active">Review mode</span>:<button onClick={reviewAll}>Review All {allIssues.length>0?'· '+allIssues.length+' items':''}</button>}</div>
     </div>
     <div className={'ef-layout'+(railCollapsed?' ef-rail-collapsed':'')+(floating.form?' ef-form-popped':'')+(floating.preview&&showPreview?' ef-preview-popped':'')}>
       <aside className="ef-rail">
