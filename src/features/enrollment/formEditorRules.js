@@ -114,19 +114,19 @@ export function enrollmentIssues(values = {}, page) {
     }
     if (isDwSpecial(values) && blank('terminationNotice'))
       add('terminationNotice','73 · Layoff Notice','Choose Yes or No.');
-    if ((isDwApplicable(values) && values.terminationNotice === 'Yes') && 
-        values.projectedLayoffDate && values.actualLayoffDate)
-      add('terminationNotice','74–75 · Layoff Dates','Review whether both dates apply; projected and actual dates serve different purposes.','warning');
     if (isDwApplicable(values)) {
       for (const [key,label] of [
         ['workSearchExemptDate','71 · Exemption Date'],
         ['projectedLayoffDate','74 · Projected Layoff Date'],
         ['actualLayoffDate','75 · Actual Layoff Date'],
         ['rapidResponseDate','77 · Rapid Response Date']]) {
-        if (values[key] && !/^\d{4}-\d{2}-\d{2}$/.test(String(values[key])))
+        const applies = key==='workSearchExemptDate' ? isDwGeneral(values)&&values.workSearchExempt==='Yes'
+          : key==='rapidResponseDate' ? isDwGeneral(values)&&values.rapidResponse==='Yes'
+          : isDwGeneral(values)&&values.terminationNotice==='Yes';
+        if (applies && values[key] && !/^\d{4}-\d{2}-\d{2}$/.test(String(values[key])))
           add(key,label,'Enter a valid date.','error');
       }
-      if (values.dislocationWage &&
+      if (isDwGeneral(values) && values.dislocationWage &&
           (!/^\d+(\.\d{1,2})?$/.test(String(values.dislocationWage)) || Number(values.dislocationWage)>100000))
         add('dislocationWage','80 · Dislocation Hourly Wage','Enter a valid nonnegative amount.','error');
     }
