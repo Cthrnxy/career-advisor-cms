@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {EDITOR_PAGES, MAPPED_PAGES, LIST_A, LIST_B, LIST_C, SELECTIVE_REGISTERED, SELECTIVE_EXEMPT, ELIGIBILITY_OPTIONS, enrollmentIssues} from './formEditorRules.js';
+import {EDITOR_PAGES, MAPPED_PAGES, LIST_A, LIST_B, LIST_C, SELECTIVE_REGISTERED, SELECTIVE_EXEMPT, ELIGIBILITY_OPTIONS, UC_STATUS, LAYOFF_CATEGORY, isDwGeneral, isDwSpecial, enrollmentIssues} from './formEditorRules.js';
 import './formEditor.css';
 import {buildEnrollmentReviewHtml} from './exportReviewHtml.js';
 import FloatingPanel from './FloatingPanel.jsx';
@@ -71,6 +71,17 @@ function PaperPreview({page,values,focus}) {
       <section className="ef-paper-box"><h4>LANGUAGE</h4><p>36. Primarily speak a language other than English? <b>{values.otherLanguage||'____'}</b></p><p>37. Language: <b>{values.language||'__________'}</b></p></section>
       <section className="ef-paper-box"><h4>FARMWORKER / VETERAN INFORMATION</h4><p>Farmworker: {values.farmworker||'__________'}</p><p>Veteran: {values.veteran||'__________'}</p></section>
       <section className="ef-paper-box"><h4>EMPLOYMENT INFORMATION</h4><p>62. Employment status: {values.employment||'__________'}</p><p>63. Weeks unemployed: {values.unemployedWeeks||'__________'}</p><p>64. Unemployed for 27+ weeks: {values.unemployedWeeks?(Number(values.unemployedWeeks)>=27?'Yes':'No'):'____'}</p></section></>
+    :page===5?<><h3>OEWD WIOA Master Application · Page 3 of 5</h3>
+      <section className="ef-paper-box"><h4>67 · UNEMPLOYMENT COMPENSATION</h4>
+        {UC_STATUS.map(([value,label])=><MiniTick key={value} checked={values.ucStatus===value}>{label}</MiniTick>)}</section>
+      <section className="ef-paper-box"><h4>68 · REASON FOR LAYOFF</h4>
+        {LAYOFF_CATEGORY.map(([value,label])=><MiniTick key={value} checked={values.layoffCategory===value}>{label}</MiniTick>)}</section>
+      {isDwGeneral(values)&&<section className="ef-paper-box"><h4>69–90 · DISLOCATED WORKER DETAILS</h4>
+        <p>69 UI referral: {values.uiReferral||'____'} · 70 Exempt from work search: {values.workSearchExempt||'____'}</p>
+        <p>73 Layoff notice: {values.terminationNotice||'____'} · 76 Rapid Response: {values.rapidResponse||'____'}</p>
+        <p>79 Employer: {values.dislocationEmployer||'________'} · 90 Declining occupation: {values.decliningOccupation||'____'}</p></section>}
+      {isDwSpecial(values)&&<section className="ef-paper-box"><h4>73 · TERMINATION OR LAYOFF NOTICE</h4><p>{values.terminationNotice||'____'}</p></section>}
+      {values.layoffCategory==='none'&&<section className="ef-paper-box"><h4>69–90 · NOT APPLICABLE</h4><p>Skipped according to the selected answer to Question 68.</p></section>}</>
     :<><h3>{EDITOR_PAGES[page-1]}</h3><section className="ef-paper-box ef-paper-unmapped"><h4>Original PDF · Page {page} of 14</h4><p>This page's exact questions and PDF fields are awaiting mapping.</p><p>No data or completion status is inferred for this page.</p></section></>}
     <footer className="ef-paper-foot"><span>OEWD WIOA · layout reference</span><span>Source PDF page {page} / 14</span></footer>
   </div>;
@@ -139,7 +150,7 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
         <div className="ef-section-head"><div><h3>{reviewMode?'Form Check & Review':EDITOR_PAGES[page-1]}</h3><p>{reviewMode?'Review missing and potentially incorrect answers before exporting.':'Follow the original form order. Save and revisit any page.'}</p></div><div className="ef-heading-actions">{!floating.form&&<button type="button" className="ef-btn ef-popout-btn" onClick={()=>popOut('form')} title="Open the form as a movable, resizable window">Pop Out Form ↗</button>}{!showPreview&&<button type="button" className="ef-btn" onClick={()=>setShowPreview(true)}>Show Preview</button>}{!reviewMode&&<span className={'ef-page-state'+(page>MAPPED_PAGES?' muted':checked[page]&&issues.length?' warning':'')}>{page>MAPPED_PAGES?'Mapping pending':checked[page]?(issues.length?issues.length+' issues':'Checked · clear'):'Not checked'}</span>}</div></div>
         {reviewMode&&<div className="ef-review-panel" role="region" aria-label="Enrollment form review">
           <div className="ef-review-overview"><strong>{allIssues.length} items found on mapped pages</strong><p>Review the list below. Pages 5–12 are still awaiting field mapping, so this prototype cannot confirm the entire 201 application is ready for enrollment.</p></div>
-          {allIssues.length?allIssues.map((item,i)=><button type="button" className="ef-review-issue" key={item.page+'-'+item.key+'-'+i} onClick={()=>{goPage(item.page);setReviewMode(false)}}><span>Page {item.page}</span><strong>{item.label}</strong><small>{item.message}</small><b>›</b></button>):<p className="ef-review-clear">No issues detected on the four mapped pages.</p>}
+          {allIssues.length?allIssues.map((item,i)=><button type="button" className="ef-review-issue" key={item.page+'-'+item.key+'-'+i} onClick={()=>{goPage(item.page);setReviewMode(false)}}><span>Page {item.page}</span><strong>{item.label}</strong><small>{item.message}</small><b>›</b></button>):<p className="ef-review-clear">No issues detected on the five mapped pages.</p>}
           <div className="ef-review-pending"><strong>Pages needing implementation</strong><p>{EDITOR_PAGES.slice(MAPPED_PAGES).map((x,i)=>'Page '+(i+MAPPED_PAGES+1)+' · '+x).join(', ')}</p></div>
           <div className="ef-review-foot"><button className="ef-btn" onClick={()=>setReviewMode(false)}>Continue Editing</button><button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enrollment ↗</button></div>
         </div>}
@@ -172,7 +183,61 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
           <section className="ef-question-block"><div className="ef-question-heading"><span>39</span><div><h4>Farmworker & Veteran</h4><p>Questions 39–61. Relevant additional questions will be mapped later.</p></div></div>{selectOptions('farmworker','39 · Farmworker Status',['No','Farmworker','Migrant','Migrant Farmworker'])}{selectOptions('veteran','43 · Veteran Status',['No','Yes · 180 days or less','Yes · Eligible Veteran','Yes · Other Eligible Person'])}</section>
           <section className="ef-question-block"><div className="ef-question-heading"><span>62</span><div><h4>Employment</h4><p>Questions 62–66. Unemployment duration drives Question 64.</p></div></div>{selectOptions('employment','62 · Employment Status',['Employed','Not Employed','Employed · Notice of Termination'])}{input('unemployedWeeks','63 · Weeks Unemployed',{type:'number',placeholder:'Enter actual weeks'})}{values.unemployedWeeks&&<p className="ef-context-note">64 · 27 or more weeks: <strong>{Number(values.unemployedWeeks)>=27?'Yes':'No'}</strong> (calculated from Question 63)</p>}</section>
         </div>}
-        {!reviewMode&&page>MAPPED_PAGES&&<div className="ef-unmapped"><span>◇</span><h4>{EDITOR_PAGES[page-1]}</h4><p>This source page is included in navigation but its detailed fields have not been mapped yet. It will not be counted as complete or incorrectly marked as missing.</p><p className="ef-context-note">Prototype coverage: the first four source pages. Complete mapping for the remaining pages is pending.</p></div>}
+        {!reviewMode&&page===5&&<div className="ef-question-groups">
+          <section className="ef-question-block">
+            <div className="ef-question-heading"><span>67</span><div><h4>Unemployment Compensation</h4></div></div>
+            {selectOptions('ucStatus','67 · Unemployment Compensation (past 6 months)',UC_STATUS.map(([value,label])=>({value,label})))}
+          </section>
+          <section className="ef-question-block">
+            <div className="ef-question-heading"><span>68</span><div><h4>Reason for Layoff</h4></div></div>
+            {selectOptions('layoffCategory','68 · Applicable Category',LAYOFF_CATEGORY.map(([value,label])=>({value,label})))}
+            {values.layoffCategory==='none'&&<p className="ef-context-note">Questions 69–90 are skipped.</p>}
+          </section>
+          {isDwSpecial(values)&&<section className="ef-question-block">
+            <div className="ef-question-heading"><span>73</span><div><h4>Layoff Notice</h4></div></div>
+            {selectOptions('terminationNotice','73 · Received a termination or layoff notice?',['Yes','No'])}
+          </section>}
+          {isDwGeneral(values)&&<>
+            <section className="ef-question-block">
+              <div className="ef-question-heading"><span>69</span><div><h4>UI & Work Search</h4></div></div>
+              <div className="ef-form-grid">
+                {['claimantWprs','claimant'].includes(values.ucStatus)&&selectOptions('uiReferral','69 · UI Claimant Referred By',['WPRS','RESEA','REA','Not Applicable'])}
+                {selectOptions('workSearchExempt','70 · Exempt from Work Search?',['Yes','No'])}
+                {values.workSearchExempt==='Yes'&&input('workSearchExemptDate','71 · Date Exempted',{type:'date'})}
+                {values.employment?.startsWith('Employed')&&selectOptions('wageAdvance','72 · Job Lacks Advancement / Wage Gain?',['Yes','No'])}
+              </div>
+            </section>
+            <section className="ef-question-block">
+              <div className="ef-question-heading"><span>73</span><div><h4>Layoff & Rapid Response</h4></div></div>
+              <div className="ef-form-grid">
+                {selectOptions('terminationNotice','73 · Received Termination / Layoff Notice?',['Yes','No'])}
+                {values.terminationNotice==='Yes'&&input('projectedLayoffDate','74 · Projected Layoff Date',{type:'date'})}
+                {values.terminationNotice==='Yes'&&input('actualLayoffDate','75 · Actual Layoff Date',{type:'date'})}
+                {selectOptions('rapidResponse','76 · Attended Rapid Response Orientation?',['Yes','No'])}
+                {values.rapidResponse==='Yes'&&input('rapidResponseDate','77 · Most Recent Orientation Date',{type:'date'})}
+                {values.rapidResponse==='Yes'&&input('rapidResponseEvent','78 · Rapid Response Event #')}
+              </div>
+            </section>
+            <section className="ef-question-block">
+              <div className="ef-question-heading"><span>79</span><div><h4>Dislocation Employment</h4></div></div>
+              <div className="ef-form-grid">
+                {input('dislocationEmployer','79 · Employer')}
+                {input('dislocationWage','80 · Hourly Wage',{type:'number'})}
+                {input('dislocationAddress','81 · Employer Address')}
+                {input('dislocationUnit','82 · Unit / Apt')}
+                {input('dislocationCity','83 · City')}
+                {input('dislocationState','84 · State')}
+                {input('dislocationZip','85 · ZIP')}
+                {input('layoffIndustry','86 · Layoff Industry')}
+                {input('naics','87 · NAICS Code')}
+                {input('layoffOccupation','88 · Occupation Title')}
+                {input('onetCode','89 · O*NET Code')}
+                {selectOptions('decliningOccupation','90 · Declining Occupation / Industry?',['Yes','No'])}
+              </div>
+            </section>
+          </>}
+        </div>}
+        {!reviewMode&&page>MAPPED_PAGES&&<div className="ef-unmapped"><span>◇</span><h4>{EDITOR_PAGES[page-1]}</h4><p>This source page is included in navigation but its detailed fields have not been mapped yet. It will not be counted as complete or incorrectly marked as missing.</p><p className="ef-context-note">Prototype coverage: the first five source pages. The remaining pages need field mapping.</p></div>}
         {!reviewMode&&checked[page]&&page<=MAPPED_PAGES&&<div className={'ef-check-results'+(issues.length?' has-issues':'')}><h4>{issues.length?issues.length+' items to review':'No detected issues on this mapped page'}</h4>{issues.length?issues.map((i,n)=><p key={i.key+n}><strong>{i.label}:</strong> {i.message}</p>):<p>Only prototype checks were run. This is not an eligibility approval.</p>}</div>}
         {!reviewMode&&<div className="ef-bottom"><button type="button" className="ef-btn ef-bottom-arrow" disabled={page===1} onClick={()=>goPage(page-1)} aria-label="Previous page">‹</button><div><span className="ef-bottom-page">Page {page} / 12</span><button className="ef-btn" disabled={page>MAPPED_PAGES} onClick={checkPage}>Check Page</button><button type="button" className="ef-btn ef-bottom-arrow" disabled={page===12} onClick={()=>goPage(page+1)} aria-label="Next page">›</button></div></div>}
       </section>
@@ -215,7 +280,7 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
     {exportModal&&<div role="dialog" aria-modal="true" aria-labelledby="ef-export-title" className="ef-review-backdrop" onClick={()=>setExportModal(false)}>
       <div className="ef-review-dialog ef-export-dialog" onClick={e=>e.stopPropagation()}>
         <div className="ef-review-header"><div><span className="ef-overline">EXPORT FOR ENROLLMENT</span><h3 id="ef-export-title">Check the form before exporting</h3></div><button type="button" className="ef-btn" onClick={()=>setExportModal(false)} aria-label="Close export dialog">✕</button></div>
-        <p className="ef-review-info">We found <strong>{allIssues.length} possible missing or incorrect answers</strong> on the four mapped pages. Please review them before using this form for enrollment.</p>
+        <p className="ef-review-info">We found <strong>{allIssues.length} possible missing or incorrect answers</strong> on the five mapped pages. Please review them before using this form for enrollment.</p>
         <div className="ef-export-stats"><div><strong>{allIssues.filter(x=>x.severity==='missing').length}</strong><span>Missing</span></div><div><strong>{allIssues.filter(x=>x.severity==='error').length}</strong><span>Possible errors</span></div><div><strong>{EDITOR_PAGES.length-MAPPED_PAGES}</strong><span>Pages not mapped</span></div></div>
         {allIssues.length>0&&<div className="ef-export-summary">{allIssues.slice(0,4).map((x,i)=><p key={x.key+i}><strong>Page {x.page} · {x.label}</strong><span>{x.message}</span></p>)}{allIssues.length>4&&<small>And {allIssues.length-4} more items…</small>}</div>}
         <div className="ef-export-caveat"><strong>Prototype export only</strong><p>Confirm Export opens a printable review copy that can be saved as PDF. It is not the official OEWD 201 application. Exporting does not mark the Case Enrolled or submit anything, and pages 5–12 still need mapping.</p></div>
