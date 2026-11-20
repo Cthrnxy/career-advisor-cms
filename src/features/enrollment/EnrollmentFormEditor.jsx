@@ -1,6 +1,7 @@
 import React, {useMemo, useState} from 'react';
 import {EDITOR_PAGES, MAPPED_PAGES, LIST_A, LIST_B, LIST_C, SELECTIVE_REGISTERED, SELECTIVE_EXEMPT, ELIGIBILITY_OPTIONS, enrollmentIssues} from './formEditorRules.js';
 import './formEditor.css';
+import {buildEnrollmentReviewHtml} from './exportReviewHtml.js';
 
 const blankOption = {value:'', label:'Choose an option…'};
 function initialValues(record, client) {
@@ -77,7 +78,10 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
   const [page, setPage] = useState(1);
   const [checked, setChecked] = useState({});
   const [showPreview, setShowPreview] = useState(true);
-  const [showReview, setShowReview] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [exportModal, setExportModal] = useState(false);
+  const [railCollapsed, setRailCollapsed] = useState(false);
+  const [exportNotice, setExportNotice] = useState('');
   const [focus, setFocus] = useState('');
   const values = initialValues(record,client);
   const issueByPage = useMemo(()=>Object.fromEntries(
@@ -89,7 +93,33 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
   const update = (key,value) => onChange({...values,[key]:value});
   const goPage = number => {setPage(Math.max(1,Math.min(12,number)));setFocus('');};
   const checkPage = () => setChecked(prev=>({...prev,[page]:true}));
-  const reviewAll = () => {setChecked(Object.fromEntries([1,2,3,4].map(n=>[n,true])));setShowReview(true)};
+  const reviewAll = () => {
+    setChecked(Object.fromEntries(Array.from({length:MAPPED_PAGES},(_,i)=>[i+1,true])));
+    setReviewMode(true);
+    setExportModal(false);
+  };
+  const beginExport = () => {
+    setChecked(Object.fromEntries(Array.from({length:MAPPED_PAGES},(_,i)=>[i+1,true])));
+    setExportModal(true);
+  };
+  const confirmExport = () => {
+    const html = buildEnrollmentReviewHtml({
+      clientName:client.name, applicationNumber:values.applicationNumber, values,
+      issues:allIssues, pendingPages:EDITOR_PAGES.slice(MAPPED_PAGES)
+    });
+    const printWindow = window.open('about:blank','_blank');
+    if (!printWindow) {
+      setExportNotice('Your browser blocked the preview window. Allow pop-ups for this demo to open the printable copy.');
+      setExportModal(false);
+      return;
+    }
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setExportModal(false);
+    setExportNotice('Prototype review copy opened in a new tab. Use Print / Save as PDF there.');
+    onSave();
+  };
   const allIssues = Object.values(issueByPage).flat();
   const completed = [1,2,3,4].filter(n=>checked[n] && issueByPage[n].length===0).length;
   const selectOptions = (id,label,items,focusGroup) => <Choice id={id} label={label} value={values[id]} options={items} issue={issue(id)} onFocus={()=>setFocus(focusGroup||id)} onChange={v=>update(id,v)}/>;
@@ -97,24 +127,35 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
   return <div className="ef-app">
     <div className="ef-toolbar">
       <div><span className="ef-overline">ENROLLMENT / 201 · WIOA ADULT</span><h2>201 Master Application</h2><p>Complete the form in CMS · compare with the original page order</p></div>
-      <div className="ef-toolbar-actions"><span className="ef-autosave">● Browser draft</span><button className="ef-btn" onClick={()=>setShowPreview(v=>!v)}>{showPreview?'Hide preview':'Show preview'}</button><button className="ef-btn ef-btn-primary" onClick={onSave}>Save Draft</button></div>
+      <div className="ef-toolbar-actions"><span className="ef-autosave">● Browser draft</span><button className="ef-btn" onClick={onSave}>Save Draft</button>{reviewMode?<button className="ef-btn ef-btn-primary" onClick={()=>setReviewMode(false)}>Continue Editing</button>:<button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enrollment ↗</button>}</div>
     </div>
     <div className="ef-statusline">
       <div><strong>{completed} of 4</strong> mapped pages checked <span>· Pages 5–12 awaiting mapping</span></div>
-      <div className="ef-status-actions"><button onClick={reviewAll}>Review All {allIssues.length>0?'· '+allIssues.length+' items':''}</button></div>
+      <div className="ef-status-actions">{reviewMode?<span className="ef-review-active">Review mode</span>:<button onClick={reviewAll}>Review All {allIssues.length>0?'· '+allIssues.length+' items':''}</button>}</div>
     </div>
-    <div className="ef-layout">
+    <div className={'ef-layout'+(railCollapsed?' ef-rail-collapsed':'')}>
       <aside className="ef-rail">
-        <div className="ef-rail-head">FORM PAGES <span>1–12 of 14</span></div>
-        {EDITOR_PAGES.map((label,i)=>{const number=i+1;const mapped=number<=MAPPED_PAGES;const didCheck=checked[number];const count=issueByPage[number]?.length||0;return <button type="button" key={number} className={'ef-page'+(page===number?' selected':'')} onClick={()=>goPage(number)} aria-current={page===number?'page':undefined}>
-          <span className="ef-page-number">{String(number).padStart(2,'0')}</span><span className="ef-page-copy"><strong>{label}</strong><small>{!mapped?'Mapping pending':didCheck?(count?count+' to review':'Checked · clear'):'Not checked'}</small></span>
+        <div className="ef-rail-head"><div><span className="ef-rail-heading">FORM PAGES</span>{!railCollapsed&&<small>1–12</small>}</div><button type="button" className="ef-rail-toggle" onClick={()=>setRailCollapsed(v=>!v)} aria-expanded={!railCollapsed} title={railCollapsed?'Expand form contents':'Collapse form contents'} aria-label={railCollapsed?'Expand form contents':'Collapse form contents'}>{railCollapsed?'›':'‹'}</button></div>
+        {EDITOR_PAGES.map((label,i)=>{const number=i+1;const mapped=number<=MAPPED_PAGES;const didCheck=checked[number];const count=issueByPage[number]?.length||0;return <button type="button" key={number} className={'ef-page'+(page===number?' selected':'')} onClick={()=>goPage(number)} title={label} aria-label={'Page '+number+' · '+label} aria-current={page===number?'page':undefined}>
+          <span className="ef-page-number">{String(number).padStart(2,'0')}</span>{!railCollapsed&&<span className="ef-page-copy"><strong>{label}</strong><small>{!mapped?'Mapping pending':didCheck?(count?count+' to review':'Checked · clear'):'Not checked'}</small></span>}
           {mapped&&didCheck&&<span className={'ef-page-dot'+(count?' warn':' done')}/>}
         </button>})}
-        <div className="ef-iepside"><strong>IEP · original pages 13–14</strong><small>Handled as an uploaded Case document. Not part of this web form.</small></div>
+        
       </aside>
       <section className="ef-editor">
-        <div className="ef-section-head"><div><span className="ef-overline">PAGE {page} OF 12 · SOURCE PDF {page} OF 14</span><h3>{EDITOR_PAGES[page-1]}</h3><p>Follow the original form order. Save and revisit any page.</p></div><span className={'ef-page-state'+(page>MAPPED_PAGES?' muted':checked[page]&&issues.length?' warning':'')}>{page>MAPPED_PAGES?'Mapping pending':checked[page]?(issues.length?issues.length+' issues':'Checked · clear'):'Not checked'}</span></div>
-        {page===1&&<div className="ef-question-groups">
+        <div className="ef-section-head"><div><span className="ef-overline">{reviewMode?'REVIEW MODE':'PAGE '+page+' OF 12'}</span><h3>{reviewMode?'Form Check & Review':EDITOR_PAGES[page-1]}</h3><p>{reviewMode?'Review missing and potentially incorrect answers before exporting.':'Follow the original form order. Save and revisit any page.'}</p></div>{!reviewMode&&<span className={'ef-page-state'+(page>MAPPED_PAGES?' muted':checked[page]&&issues.length?' warning':'')}>{page>MAPPED_PAGES?'Mapping pending':checked[page]?(issues.length?issues.length+' issues':'Checked · clear'):'Not checked'}</span>}</div>
+        {!reviewMode&&<nav className="ef-pagination" aria-label="Form page navigation">
+          <button type="button" className="ef-page-arrow" aria-label="Previous page" title="Previous page" disabled={page===1} onClick={()=>goPage(page-1)}>‹</button>
+          <div className="ef-pagination-numbers">{EDITOR_PAGES.map((label,i)=><button type="button" key={i} className={'ef-number-btn'+(page===i+1?' active':'')} aria-label={'Page '+(i+1)+': '+label} aria-current={page===i+1?'page':undefined} onClick={()=>goPage(i+1)}>{i+1}</button>)}</div>
+          <button type="button" className="ef-page-arrow" aria-label="Next page" title="Next page" disabled={page===12} onClick={()=>goPage(page+1)}>›</button>
+        </nav>}
+        {reviewMode&&<div className="ef-review-panel" role="region" aria-label="Enrollment form review">
+          <div className="ef-review-overview"><strong>{allIssues.length} items found on mapped pages</strong><p>Review the list below. Pages 5–12 are still awaiting field mapping, so this prototype cannot confirm the entire 201 application is ready for enrollment.</p></div>
+          {allIssues.length?allIssues.map((item,i)=><button type="button" className="ef-review-issue" key={item.page+'-'+item.key+'-'+i} onClick={()=>{goPage(item.page);setReviewMode(false)}}><span>Page {item.page}</span><strong>{item.label}</strong><small>{item.message}</small><b>›</b></button>):<p className="ef-review-clear">No issues detected on the four mapped pages.</p>}
+          <div className="ef-review-pending"><strong>Pages needing implementation</strong><p>{EDITOR_PAGES.slice(MAPPED_PAGES).map((x,i)=>'Page '+(i+MAPPED_PAGES+1)+' · '+x).join(', ')}</p></div>
+          <div className="ef-review-foot"><button className="ef-btn" onClick={()=>setReviewMode(false)}>Continue Editing</button><button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enrollment ↗</button></div>
+        </div>}
+        {!reviewMode&&page===1&&<div className="ef-question-groups">
           <section className="ef-question-block"><div className="ef-question-heading"><span>I</span><div><h4>US Work Authorization</h4><p>Original List A OR List B + List C. Select the evidence being used.</p></div></div>
             <div className="ef-route-cards"><label className={values.workRoute==='A'?'active':''}><input type="radio" name="ef-work" checked={values.workRoute==='A'} onChange={()=>{onChange({...values,workRoute:'A',listB:'',listC:''});setFocus('work')}}/><strong>List A</strong><small>Identity + work authorization</small></label><label className={values.workRoute==='BC'?'active':''}><input type="radio" name="ef-work" checked={values.workRoute==='BC'} onChange={()=>{onChange({...values,workRoute:'BC',listA:''});setFocus('work')}}/><strong>List B + List C</strong><small>Two-document combination</small></label></div>
             {issue('workRoute')&&<p className="ef-inline-issue">{issue('workRoute').message}</p>}
@@ -127,36 +168,43 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
             {values.selectiveRoute&&<div className="ef-subfields">{selectOptions('selectiveEvidence',values.selectiveRoute==='exempt'?'Exemption reason':'Registration evidence',values.selectiveRoute==='exempt'?SELECTIVE_EXEMPT:SELECTIVE_REGISTERED,'selective')}</div>}
           </section>
         </div>}
-        {page===2&&<div className="ef-question-groups"><section className="ef-question-block"><div className="ef-question-heading"><span>III</span><div><h4>Adult Eligibility</h4><p>Choose ONE option from the WIOA Adult Priority of Service checklist.</p></div></div>
+        {!reviewMode&&page===2&&<div className="ef-question-groups"><section className="ef-question-block"><div className="ef-question-heading"><span>III</span><div><h4>Adult Eligibility</h4><p>Choose ONE option from the WIOA Adult Priority of Service checklist.</p></div></div>
           <div className="ef-eligibility-list">{ELIGIBILITY_OPTIONS.map(([key,label])=><label key={key} className={values.adultEligibility===key?'active':''}><input name="ef-eligibility" type="radio" checked={values.adultEligibility===key} onChange={()=>update('adultEligibility',key)}/>{label}</label>)}</div>
           {issue('adultEligibility')&&<p className="ef-inline-issue">{issue('adultEligibility').message}</p>}
           {values.adultEligibility==='income'&&<div className="ef-subfields ef-two-fields">{input('familySize','Family Size',{type:'number',placeholder:'e.g. 1'})}{input('annualIncome','Annual Family Income',{type:'number',placeholder:'e.g. 25000'})}</div>}
           {values.adultEligibility==='benefits'&&<div className="ef-subfields">{selectOptions('publicBenefit','Public Benefit',['SNAP / CalFresh','TANF / CalWORKS','SSI','Other income-based public benefit'])}</div>}
           </section><section className="ef-question-block ef-muted-block"><div className="ef-question-heading"><span>IV</span><div><h4>Dislocated Worker Eligibility</h4><p>This case is 201 WIOA Adult. The separate Dislocated Worker category is not assessed in this prototype.</p></div></div></section></div>}
-        {page===3&&<div className="ef-question-groups"><section className="ef-question-block"><div className="ef-question-heading"><span>01</span><div><h4>Application Details</h4><p>Source: OEWD WIOA Master Application · PDF page 3.</p></div></div>
+        {!reviewMode&&page===3&&<div className="ef-question-groups"><section className="ef-question-block"><div className="ef-question-heading"><span>01</span><div><h4>Application Details</h4><p>Source: OEWD WIOA Master Application · PDF page 3.</p></div></div>
           <div className="ef-form-grid">{input('agency','Agency')}{input('applicationDate','Application Date',{type:'date',help:'Date all documents have been collected and eligibility determined.'})}{input('applicationNumber','Application Number',{help:'May remain blank until OEWD approval.'})}</div></section>
           <section className="ef-question-block"><div className="ef-question-heading"><span>02</span><div><h4>Contact Information</h4><p>Client Profile values are prefilled when available. Changes here belong to this Case draft.</p></div></div>
           <div className="ef-form-grid">{input('firstName','1 · First Name')}{input('lastName','3 · Last Name')}{input('phone','13 · Phone Number')}{input('email','16 · Email',{type:'email'})}{input('address','5 · Residential Address')}{input('city','7 · City')}{input('state','8 · State')}{input('zip','9 · ZIP Code')}{input('county','10 · County')}</div></section>
           <section className="ef-question-block ef-muted-block"><h4>Demographic Information · Questions 24–35</h4><p>These fields are identified in the source PDF. Full demographic controls will be mapped in a later prototype update.</p></section>
         </div>}
-        {page===4&&<div className="ef-question-groups"><section className="ef-question-block"><div className="ef-question-heading"><span>36</span><div><h4>Language Information</h4><p>Corresponds to Questions 36–37 on the original application.</p></div></div>{selectOptions('otherLanguage','36 · Primarily speak a language other than English?',['Yes','No'])}{values.otherLanguage==='Yes'&&input('language','37 · Primary Language',{placeholder:'e.g. Chinese'})}</section>
+        {!reviewMode&&page===4&&<div className="ef-question-groups"><section className="ef-question-block"><div className="ef-question-heading"><span>36</span><div><h4>Language Information</h4><p>Corresponds to Questions 36–37 on the original application.</p></div></div>{selectOptions('otherLanguage','36 · Primarily speak a language other than English?',['Yes','No'])}{values.otherLanguage==='Yes'&&input('language','37 · Primary Language',{placeholder:'e.g. Chinese'})}</section>
           <section className="ef-question-block"><div className="ef-question-heading"><span>39</span><div><h4>Farmworker & Veteran</h4><p>Questions 39–61. Relevant additional questions will be mapped later.</p></div></div>{selectOptions('farmworker','39 · Farmworker Status',['No','Farmworker','Migrant','Migrant Farmworker'])}{selectOptions('veteran','43 · Veteran Status',['No','Yes · 180 days or less','Yes · Eligible Veteran','Yes · Other Eligible Person'])}</section>
           <section className="ef-question-block"><div className="ef-question-heading"><span>62</span><div><h4>Employment</h4><p>Questions 62–66. Unemployment duration drives Question 64.</p></div></div>{selectOptions('employment','62 · Employment Status',['Employed','Not Employed','Employed · Notice of Termination'])}{input('unemployedWeeks','63 · Weeks Unemployed',{type:'number',placeholder:'Enter actual weeks'})}{values.unemployedWeeks&&<p className="ef-context-note">64 · 27 or more weeks: <strong>{Number(values.unemployedWeeks)>=27?'Yes':'No'}</strong> (calculated from Question 63)</p>}</section>
         </div>}
-        {page>MAPPED_PAGES&&<div className="ef-unmapped"><span>◇</span><h4>{EDITOR_PAGES[page-1]}</h4><p>This source page is included in navigation but its detailed fields have not been mapped yet. It will not be counted as complete or incorrectly marked as missing.</p><p className="ef-context-note">Prototype coverage: source PDF pages 1–4. IEP source pages 13–14 will be uploaded as Case documents.</p></div>}
-        {checked[page]&&page<=MAPPED_PAGES&&<div className={'ef-check-results'+(issues.length?' has-issues':'')}><h4>{issues.length?issues.length+' items to review':'No detected issues on this mapped page'}</h4>{issues.length?issues.map((i,n)=><p key={i.key+n}><strong>{i.label}:</strong> {i.message}</p>):<p>Only prototype checks were run. This is not an eligibility approval.</p>}</div>}
-        <div className="ef-bottom"><button className="ef-btn" disabled={page===1} onClick={()=>goPage(page-1)}>← Previous</button><div><button className="ef-btn" disabled={page>MAPPED_PAGES} onClick={checkPage}>Check Page</button><button className="ef-btn ef-btn-primary" disabled={page===12} onClick={()=>goPage(page+1)}>Next Page →</button></div></div>
+        {!reviewMode&&page>MAPPED_PAGES&&<div className="ef-unmapped"><span>◇</span><h4>{EDITOR_PAGES[page-1]}</h4><p>This source page is included in navigation but its detailed fields have not been mapped yet. It will not be counted as complete or incorrectly marked as missing.</p><p className="ef-context-note">Prototype coverage: the first four source pages. Complete mapping for the remaining pages is pending.</p></div>}
+        {!reviewMode&&checked[page]&&page<=MAPPED_PAGES&&<div className={'ef-check-results'+(issues.length?' has-issues':'')}><h4>{issues.length?issues.length+' items to review':'No detected issues on this mapped page'}</h4>{issues.length?issues.map((i,n)=><p key={i.key+n}><strong>{i.label}:</strong> {i.message}</p>):<p>Only prototype checks were run. This is not an eligibility approval.</p>}</div>}
+        {!reviewMode&&<div className="ef-bottom"><button type="button" className="ef-btn ef-bottom-arrow" disabled={page===1} onClick={()=>goPage(page-1)} aria-label="Previous page">‹</button><div><span className="ef-bottom-page">Page {page} / 12</span><button className="ef-btn" disabled={page>MAPPED_PAGES} onClick={checkPage}>Check Page</button><button type="button" className="ef-btn ef-bottom-arrow" disabled={page===12} onClick={()=>goPage(page+1)} aria-label="Next page">›</button></div></div>}
       </section>
-      {showPreview&&<aside className="ef-preview-pane"><div className="ef-preview-top"><div><strong>Form reference</strong><small>Original page order · live layout comparison</small></div><span>PDF p. {page}/14</span></div>
+      {showPreview&&<aside className="ef-preview-pane"><div className="ef-preview-top"><div><strong>Form reference</strong><small>Original page order · live layout comparison</small></div><div className="ef-preview-controls"><span>Page {page}</span><button className="ef-btn ef-preview-toggle" onClick={()=>setShowPreview(false)}>Hide Preview</button></div></div>
         <div className="ef-preview-scroll"><PaperPreview page={page} values={values} focus={focus}/></div>
         <div className="ef-preview-foot">Layout recreation for review only. This is <strong>not</strong> the actual generated OEWD PDF.</div>
       </aside>}
+      {!showPreview&&<button type="button" className="ef-preview-reopen" onClick={()=>setShowPreview(true)}>Show Preview ›</button>}
     </div>
-    {showReview&&<div role="dialog" aria-modal="true" aria-labelledby="ef-review-title" className="ef-review-backdrop" onClick={()=>setShowReview(false)}><div className="ef-review-dialog" onClick={e=>e.stopPropagation()}><div className="ef-review-header"><div><span className="ef-overline">201 · REVIEW ALL</span><h3 id="ef-review-title">Issues & form coverage</h3></div><button className="ef-btn" onClick={()=>setShowReview(false)}>Close ✕</button></div>
-      <p className="ef-review-info">{allIssues.length} issues on the first four mapped pages. Pages 5–12 remain to be implemented; no full-form completion claim is made.</p>
-      {allIssues.length?allIssues.map((i,n)=><button key={i.page+'-'+i.key+'-'+n} className="ef-review-issue" onClick={()=>{goPage(i.page);setShowReview(false)}}><span>Page {i.page}</span><strong>{i.label}</strong><small>{i.message}</small><b>↗</b></button>):<p>No issues detected on mapped pages. This does not mean the entire original PDF is complete.</p>}
-      <div className="ef-review-pending"><strong>Awaiting field mapping</strong><p>Pages 5–12 · Master Application, Section 188, rights and releases</p><p>IEP · uploaded separately as a Case document</p></div>
-    </div></div>}
-    <p className="ef-disclaimer">Synthetic-data browser prototype only · drafts are stored locally in this browser · no government submission or actual PDF export.</p>
+    {exportModal&&<div role="dialog" aria-modal="true" aria-labelledby="ef-export-title" className="ef-review-backdrop" onClick={()=>setExportModal(false)}>
+      <div className="ef-review-dialog ef-export-dialog" onClick={e=>e.stopPropagation()}>
+        <div className="ef-review-header"><div><span className="ef-overline">EXPORT FOR ENROLLMENT</span><h3 id="ef-export-title">Check the form before exporting</h3></div><button type="button" className="ef-btn" onClick={()=>setExportModal(false)} aria-label="Close export dialog">✕</button></div>
+        <p className="ef-review-info">We found <strong>{allIssues.length} possible missing or incorrect answers</strong> on the four mapped pages. Please review them before using this form for enrollment.</p>
+        <div className="ef-export-stats"><div><strong>{allIssues.filter(x=>x.severity==='missing').length}</strong><span>Missing</span></div><div><strong>{allIssues.filter(x=>x.severity==='error').length}</strong><span>Possible errors</span></div><div><strong>{EDITOR_PAGES.length-MAPPED_PAGES}</strong><span>Pages not mapped</span></div></div>
+        {allIssues.length>0&&<div className="ef-export-summary">{allIssues.slice(0,4).map((x,i)=><p key={x.key+i}><strong>Page {x.page} · {x.label}</strong><span>{x.message}</span></p>)}{allIssues.length>4&&<small>And {allIssues.length-4} more items…</small>}</div>}
+        <div className="ef-export-caveat"><strong>Prototype export only</strong><p>Confirm Export opens a printable review copy that can be saved as PDF. It is not the official OEWD 201 application. Exporting does not mark the Case Enrolled or submit anything, and pages 5–12 still need mapping.</p></div>
+        <div className="ef-export-actions"><button className="ef-btn" onClick={()=>setExportModal(false)}>Cancel</button><button className="ef-btn" onClick={reviewAll}>Review Issues</button><button className="ef-btn ef-btn-primary" onClick={confirmExport}>Confirm Export ↗</button></div>
+      </div>
+    </div>}
+    {exportNotice&&<div className="ef-export-notice" role="status">{exportNotice} <button type="button" onClick={()=>setExportNotice('')}>Dismiss</button></div>}
+    <p className="ef-disclaimer">Synthetic-data browser prototype · drafts are stored locally · exported review copies are not official OEWD PDFs and do not submit or enroll a Case.</p>
   </div>;
 }
