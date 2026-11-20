@@ -4,7 +4,7 @@ export const EDITOR_PAGES = [
   'Eligibility Checklist',
   'Contact & Demographics',
   'Language & Employment',
-  'Unemployment & Benefits',
+  'Unemployment & Layoff',
   'Education & School',
   'Barriers & Services',
   'Section 188',
@@ -13,7 +13,7 @@ export const EDITOR_PAGES = [
   'Information Release',
   'Photo Release'
 ];
-export const MAPPED_PAGES = 4;
+export const MAPPED_PAGES = 5;
 export const LIST_A = ['U.S. Passport', 'Permanent Resident Card (I-551)', 'Employment Authorization Document (I-766)', 'Foreign passport with temporary I-551 stamp', 'Other List A document'];
 export const LIST_B = ["Valid Driver's License or ID Card", 'Federal, state or local government ID', 'School ID card with photograph', "Voter's Registration Card", 'Other List B document'];
 export const LIST_C = ['Unrestricted Social Security Card', 'Certification of Birth Abroad', 'Original or certified U.S. birth certificate', 'U.S. Citizen ID Card (I-197)', 'Other List C document'];
@@ -25,6 +25,29 @@ export const ELIGIBILITY_OPTIONS = [
   ['homeless', 'Option 3 · Homeless Status'],
   ['skills', 'Option 4 · Basic Skills Deficient']
 ];
+export const UC_STATUS = [
+  ['claimantWprs', 'Claimant · referred by WPRS'],
+  ['claimant', 'Claimant · not referred by WPRS'],
+  ['exhaustee', 'Exhaustee of benefits'],
+  ['neither', 'Neither claimant nor exhaustee'],
+  ['notApplicable', 'Not applicable']
+];
+export const LAYOFF_CATEGORY = [
+  ['none', 'None of the above'],
+  ['1', 'Category 1 · Layoff / termination, eligible for or exhausted UC'],
+  ['2', 'Category 2 · Layoff / termination, not UC eligible, workforce attached'],
+  ['3', 'Category 3 · Permanent closure or substantial layoff'],
+  ['4', 'Category 4 · Employer announced facility closure'],
+  ['5', 'Category 5 · Formerly self-employed, unemployed for economic or natural-disaster reasons'],
+  ['6', 'Category 6 · Displaced homemaker'],
+  ['7', 'Category 7 · Military spouse relocation / job loss'],
+  ['8', 'Category 8 · Military spouse unemployed or underemployed']
+];
+export const DW_GENERAL = ['1','2','3','4','5'];
+export const DW_SPECIAL = ['6','7','8'];
+export const isDwGeneral = values => DW_GENERAL.includes(values.layoffCategory);
+export const isDwSpecial = values => DW_SPECIAL.includes(values.layoffCategory);
+export const isDwApplicable = values => isDwGeneral(values) || isDwSpecial(values);
 export function enrollmentIssues(values = {}, page) {
   const issues = [];
   const add = (key, label, message, severity = 'missing') => issues.push({page, key, label, message, severity});
@@ -69,6 +92,44 @@ export function enrollmentIssues(values = {}, page) {
     if (blank('employment')) add('employment', 'Employment Status', 'Select the employment status.');
     if (values.unemployedWeeks && (!/^\d+$/.test(values.unemployedWeeks) || Number(values.unemployedWeeks)>5500))
       add('unemployedWeeks', 'Weeks Unemployed', 'Check the number of weeks.', 'error');
+  }
+  if (page === 5) {
+    if (blank('ucStatus')) add('ucStatus','67 · Unemployment Compensation','Select the participant’s UC status.');
+    if (blank('layoffCategory')) add('layoffCategory','68 · Reason for Layoff','Choose the applicable category or None of the above.');
+    // The original PDF explicitly skips Q69–90 after "None"; categories 6–8 go to Q73.
+    if (isDwGeneral(values)) {
+      if (['claimantWprs','claimant'].includes(values.ucStatus) && blank('uiReferral'))
+        add('uiReferral','69 · UI Referral','Select the UI referral program or Not Applicable.');
+      if (blank('workSearchExempt')) add('workSearchExempt','70 · Exempt from Work Search','Choose Yes or No.');
+      if (values.workSearchExempt === 'Yes' && blank('workSearchExemptDate'))
+        add('workSearchExemptDate','71 · Exemption Date','Enter the date exempted from work search.');
+      if (values.employment?.startsWith('Employed') && blank('wageAdvance'))
+        add('wageAdvance','72 · Opportunity to Advance','Choose Yes or No.');
+      if (blank('terminationNotice')) add('terminationNotice','73 · Layoff Notice','Choose Yes or No.');
+      if (blank('rapidResponse')) add('rapidResponse','76 · Rapid Response','Choose Yes or No.');
+      if (values.rapidResponse === 'Yes' && blank('rapidResponseDate'))
+        add('rapidResponseDate','77 · Rapid Response Date','Enter the date of the most recent orientation.');
+      if (blank('decliningOccupation'))
+        add('decliningOccupation','90 · Declining Occupation / Industry','Choose Yes or No.');
+    }
+    if (isDwSpecial(values) && blank('terminationNotice'))
+      add('terminationNotice','73 · Layoff Notice','Choose Yes or No.');
+    if ((isDwApplicable(values) && values.terminationNotice === 'Yes') && 
+        values.projectedLayoffDate && values.actualLayoffDate)
+      add('terminationNotice','74–75 · Layoff Dates','Review whether both dates apply; projected and actual dates serve different purposes.','warning');
+    if (isDwApplicable(values)) {
+      for (const [key,label] of [
+        ['workSearchExemptDate','71 · Exemption Date'],
+        ['projectedLayoffDate','74 · Projected Layoff Date'],
+        ['actualLayoffDate','75 · Actual Layoff Date'],
+        ['rapidResponseDate','77 · Rapid Response Date']]) {
+        if (values[key] && !/^\d{4}-\d{2}-\d{2}$/.test(String(values[key])))
+          add(key,label,'Enter a valid date.','error');
+      }
+      if (values.dislocationWage &&
+          (!/^\d+(\.\d{1,2})?$/.test(String(values.dislocationWage)) || Number(values.dislocationWage)>100000))
+        add('dislocationWage','80 · Dislocation Hourly Wage','Enter a valid nonnegative amount.','error');
+    }
   }
   return issues;
 }
