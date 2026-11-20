@@ -24,7 +24,6 @@
 .ef-page.selected .ef-page-number{color:#3b6888}
 .ef-page-copy{min-width:0;flex:1}.ef-page-copy strong{display:block;font-size:11px;line-height:1.35;font-weight:700}.ef-page-copy small{display:block;font-size:10px;margin-top:4px;color:#8998a5}
 .ef-page-dot{width:6px;height:6px;border-radius:50%;flex:0 0 6px}.ef-page-dot.warn{background:#be8452}.ef-page-dot.done{background:#5c9a7d}
-.ef-iepside{border-top:1px solid #e5ebf0;margin:15px 7px 0;padding:15px 2px;color:#485d70}.ef-iepside strong{display:block;font-size:11px}.ef-iepside small{display:block;font-size:10px;line-height:1.6;margin-top:6px;color:#8c9baa}
 .ef-editor{padding:24px 24px 18px;min-width:0}
 .ef-section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid #ebeff3;padding-bottom:20px;margin-bottom:22px}
 .ef-section-head h3{font-size:21px;letter-spacing:-.03em;margin:0 0 5px;line-height:1.25}
@@ -101,3 +100,82 @@
 @media(max-width:1150px){.ef-layout{grid-template-columns:165px minmax(300px,1fr) minmax(245px,.85fr)}.ef-editor{padding:20px 17px}.ef-toolbar{padding:19px}}
 @media(max-width:920px){.ef-layout{grid-template-columns:170px minmax(0,1fr)}.ef-preview-pane{grid-column:2;border-left:0;border-top:1px solid #e6edf1}.ef-preview-scroll{max-height:490px}.ef-layout:not(:has(.ef-preview-pane)){grid-template-columns:170px 1fr}}
 @media(max-width:650px){.ef-toolbar{flex-direction:column;align-items:flex-start}.ef-toolbar-actions{justify-content:flex-start}.ef-layout,.ef-layout:not(:has(.ef-preview-pane)){grid-template-columns:minmax(0,1fr)}.ef-rail{border-right:0;border-bottom:1px solid #e6edf1;display:flex;gap:5px;overflow-x:auto;padding:9px}.ef-rail-head,.ef-iepside{display:none}.ef-page{flex:0 0 126px}.ef-preview-pane{grid-column:1}.ef-statusline{align-items:flex-start;flex-direction:column}.ef-form-grid,.ef-two-fields{grid-template-columns:1fr}.ef-route-cards{grid-template-columns:1fr}.ef-bottom{flex-wrap:wrap}}
+
+
+/* Enrollment Form Editor v1.1: compact rail, numbered pagination, PDF controls and review flow */
+.ef-layout.ef-rail-collapsed{grid-template-columns:56px minmax(340px,1.22fr) minmax(270px,.93fr)}
+.ef-layout.ef-rail-collapsed:not(:has(.ef-preview-pane)){grid-template-columns:56px minmax(0,1fr)}
+.ef-rail-collapsed .ef-rail{padding:18px 5px}
+.ef-rail-collapsed .ef-rail-head{padding:0 0 14px;justify-content:center}
+.ef-rail-collapsed .ef-rail-head>div{display:none}
+.ef-rail-collapsed .ef-page{padding:9px 5px;justify-content:center}
+.ef-rail-collapsed .ef-page-number{font-size:11px;min-width:22px;text-align:center}
+.ef-rail-collapsed .ef-page-dot{position:absolute;margin-left:25px;margin-top:-20px;width:5px;height:5px}
+.ef-rail-heading{font-size:10px;color:#7c8d9e}
+.ef-rail-head>div{display:flex;flex-direction:column;gap:5px}
+.ef-rail-head small{font-size:10px;color:#98a5b0;letter-spacing:0}
+.ef-rail-toggle{display:grid;place-items:center;width:26px;height:26px;flex:0 0 26px;background:#fff;color:#536b7b;border:1px solid #dfe8ee;border-radius:6px;font-size:19px;line-height:1;cursor:pointer}
+.ef-rail-toggle:hover{background:#ecf2f5}
+.ef-page{position:relative}
+.ef-pagination{display:flex;align-items:center;justify-content:center;gap:5px;max-width:100%;overflow-x:auto;padding:1px 0 17px;margin:-5px 0 16px;border-bottom:1px solid #e9eef2}
+.ef-pagination-numbers{display:flex;align-items:center;gap:3px}
+.ef-number-btn,.ef-page-arrow{display:grid;place-items:center;background:#fff;color:#607588;border:1px solid #e4eaf0;min-width:27px;height:30px;padding:0 5px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:650}
+.ef-number-btn.active{background:#344f64;border-color:#344f64;color:#fff}
+.ef-number-btn:hover:not(.active),.ef-page-arrow:hover:not(:disabled){background:#edf3f6;color:#355169}
+.ef-page-arrow{font-size:20px;min-width:31px;line-height:1}.ef-page-arrow:disabled{opacity:.3;cursor:default}
+.ef-heading-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.ef-preview-controls{display:flex;align-items:center;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+.ef-preview-controls span{font-size:10px;color:#71899b;white-space:nowrap}
+.ef-preview-top .ef-preview-toggle{padding:7px 9px;font-size:10px}
+.ef-bottom{gap:8px}
+.ef-bottom>div{align-items:center}
+.ef-bottom-arrow{font-size:18px;line-height:1;min-width:33px;padding:6px 10px}
+.ef-bottom-page{white-space:nowrap;font-size:11px;font-weight:700;color:#718699;margin-right:2px}
+.ef-review-active{font-weight:800;color:#506c80;font-size:12px}
+.ef-review-panel{min-height:410px}
+.ef-review-overview{padding:16px;background:#f0f5f8;border:1px solid #e1eaf0;border-radius:10px;margin-bottom:14px}
+.ef-review-overview strong{font-size:13px}.ef-review-overview p{line-height:1.55;font-size:11px;color:#6a7e90;margin:8px 0 0}
+.ef-review-panel .ef-review-issue{grid-template-columns:50px minmax(0,1fr) 16px;margin-bottom:7px}
+.ef-review-panel .ef-review-issue span{font-size:10px}
+.ef-review-panel .ef-review-issue small{overflow-wrap:anywhere}
+.ef-review-clear{font-size:12px;color:#617e72;background:#f5faf6;border-radius:8px;padding:15px}
+.ef-review-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.ef-export-dialog{max-width:610px}
+.ef-export-dialog .ef-review-info{font-size:12px;line-height:1.65}
+.ef-export-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:17px 0}
+.ef-export-stats>div{background:#f3f6f8;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:5px}
+.ef-export-stats strong{font-size:21px;font-weight:750;color:#293f52}
+.ef-export-stats span{font-size:11px;color:#7e8e9b}
+.ef-export-summary{border:1px solid #e5ebef;padding:10px 14px;border-radius:8px;max-height:210px;overflow:auto}
+.ef-export-summary p{display:flex;flex-direction:column;margin:9px 0;gap:3px}
+.ef-export-summary strong{font-size:11px;color:#4b6074}
+.ef-export-summary span,.ef-export-summary small{font-size:11px;color:#738697}
+.ef-export-caveat{padding:12px 14px;border:1px solid #ecdac6;border-radius:8px;background:#fffaf4;margin:15px 0}
+.ef-export-caveat strong{font-size:12px;color:#936e45}
+.ef-export-caveat p{font-size:11px;line-height:1.65;color:#8c775f;margin:7px 0 0}
+.ef-export-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
+.ef-export-notice{display:flex;gap:15px;align-items:center;justify-content:space-between;margin:14px 0;border-radius:8px;padding:12px 15px;background:#eef7f1;border:1px solid #d8e9df;color:#466954;font-size:12px}
+.ef-export-notice button{background:transparent;border:0;color:#39654b;font-weight:750;cursor:pointer}
+@media(max-width:1150px){
+  .ef-layout.ef-rail-collapsed{grid-template-columns:52px minmax(300px,1fr) minmax(245px,.85fr)}
+}
+@media(max-width:920px){
+  .ef-layout.ef-rail-collapsed{grid-template-columns:52px minmax(0,1fr)}
+  .ef-layout.ef-rail-collapsed:not(:has(.ef-preview-pane)){grid-template-columns:52px minmax(0,1fr)}
+  .ef-pagination{justify-content:flex-start}
+  .ef-preview-pane{grid-column:2}
+}
+@media(max-width:650px){
+  .ef-layout.ef-rail-collapsed,.ef-layout.ef-rail-collapsed:not(:has(.ef-preview-pane)){grid-template-columns:minmax(0,1fr)}
+  .ef-rail-collapsed .ef-rail{padding:9px;flex-wrap:nowrap}
+  .ef-rail-collapsed .ef-rail-head{flex:0 0 30px;padding:0}
+  .ef-rail-collapsed .ef-page{flex:0 0 35px;padding:7px 2px}
+  .ef-rail-collapsed .ef-page-dot{display:none}
+  .ef-preview-pane{grid-column:1}
+  .ef-pagination-numbers{gap:2px}
+  .ef-number-btn{min-width:27px}
+  .ef-section-head{flex-wrap:wrap}
+  .ef-export-actions{justify-content:stretch}
+  .ef-export-actions .ef-btn{flex:1}
+  .ef-export-stats{gap:5px}
+}
