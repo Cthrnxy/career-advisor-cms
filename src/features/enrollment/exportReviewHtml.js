@@ -17,14 +17,49 @@ const PRINT_FIELDS = [
   ['Page 4 · Language & Employment', [
     ['Primary language other than English', 'otherLanguage'], ['Language', 'language'],
     ['Farmworker status', 'farmworker'], ['Veteran status', 'veteran'],
-    ['Employment status', 'employment'], ['Weeks unemployed', 'unemployedWeeks']]]
+    ['Employment status', 'employment'], ['Weeks unemployed', 'unemployedWeeks']]],
+  ['Page 5 · Unemployment & Layoff', [
+    ['67 · Unemployment Compensation', 'ucStatus'],
+    ['68 · Reason for Layoff', 'layoffCategory'],
+    ['69 · UI Referral', 'uiReferral'],
+    ['70 · Exempt from Work Search', 'workSearchExempt'],
+    ['71 · Exemption Date', 'workSearchExemptDate'],
+    ['72 · Advancement Opportunity', 'wageAdvance'],
+    ['73 · Termination / Layoff Notice', 'terminationNotice'],
+    ['74 · Projected Layoff Date', 'projectedLayoffDate'],
+    ['75 · Actual Layoff Date', 'actualLayoffDate'],
+    ['76 · Rapid Response Orientation', 'rapidResponse'],
+    ['77 · Recent Rapid Response Date', 'rapidResponseDate'],
+    ['78 · Rapid Response Event #', 'rapidResponseEvent'],
+    ['79 · Employer', 'dislocationEmployer'],
+    ['80 · Hourly Wage', 'dislocationWage'],
+    ['81 · Employer Address', 'dislocationAddress'],
+    ['82 · Unit / Apt', 'dislocationUnit'],
+    ['83 · City', 'dislocationCity'],
+    ['84 · State', 'dislocationState'],
+    ['85 · ZIP', 'dislocationZip'],
+    ['86 · Layoff Industry', 'layoffIndustry'],
+    ['87 · NAICS Code', 'naics'],
+    ['88 · Occupation Title', 'layoffOccupation'],
+    ['89 · O*NET Code', 'onetCode'],
+    ['90 · Declining Occupation / Industry', 'decliningOccupation']]]
 ];
 const notApplicable = (value,key) =>
   (key==='listA' && value.workRoute==='BC') ||
   ((key==='listB'||key==='listC')&&value.workRoute==='A') ||
   (key==='language' && value.otherLanguage==='No') ||
   ((key==='familySize'||key==='annualIncome')&&value.adultEligibility!=='income') ||
-  (key==='publicBenefit' && value.adultEligibility!=='benefits');
+  (key==='publicBenefit' && value.adultEligibility!=='benefits') ||
+  (['uiReferral','workSearchExempt','workSearchExemptDate','wageAdvance','rapidResponse','rapidResponseDate','rapidResponseEvent',
+    'dislocationEmployer','dislocationWage','dislocationAddress','dislocationUnit','dislocationCity','dislocationState',
+    'dislocationZip','layoffIndustry','naics','layoffOccupation','onetCode','decliningOccupation','projectedLayoffDate','actualLayoffDate'
+    ].includes(key) && !['1','2','3','4','5'].includes(value.layoffCategory)) ||
+  (key==='uiReferral' && !['claimantWprs','claimant'].includes(value.ucStatus)) ||
+  (key==='workSearchExemptDate' && value.workSearchExempt!=='Yes') ||
+  (key==='wageAdvance' && !(value.employment||'').startsWith('Employed')) ||
+  ((key==='projectedLayoffDate'||key==='actualLayoffDate') && value.terminationNotice!=='Yes') ||
+  ((key==='rapidResponseDate'||key==='rapidResponseEvent') && value.rapidResponse!=='Yes') ||
+  (key==='terminationNotice' && !['1','2','3','4','5','6','7','8'].includes(value.layoffCategory));
 
 export function buildEnrollmentReviewHtml({clientName, values = {}, issues = [], pendingPages = []}) {
   const body = PRINT_FIELDS.map(([title,fields]) =>
@@ -34,8 +69,8 @@ export function buildEnrollmentReviewHtml({clientName, values = {}, issues = [],
     '</tbody></table></section>').join('');
   const issueContent = issues.length ?
     '<ol>'+issues.map(item=>'<li><strong>Page '+escape(item.page)+' · '+escape(item.label)+':</strong> '+escape(item.message)+'</li>').join('')+'</ol>' :
-    '<p>No issues found on the four mapped pages (other pages not assessed).</p>';
-  const pending = pendingPages.map((label,i)=>'<li>Page '+(i+5)+' · '+escape(label)+'</li>').join('');
+    '<p>No issues found on the mapped pages (other pages not assessed).</p>';
+  const pending = pendingPages.map((label,i)=>'<li>Page '+(i+PRINT_FIELDS.length+1)+' · '+escape(label)+'</li>').join('');
   return [
     '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
     '<title>201 Enrollment - Prototype Review Copy</title>',
@@ -55,7 +90,7 @@ export function buildEnrollmentReviewHtml({clientName, values = {}, issues = [],
     '</style></head><body>',
     '<div class="toolbar"><strong>Prototype enrollment review copy</strong><button type="button" onclick="window.print()">Print / Save as PDF</button></div>',
     '<main class="paper"><h1>201 WIOA Adult · Enrollment Review Copy</h1><p>Client: <strong>'+escape(clientName)+'</strong></p>',
-    '<div class="warning"><strong>NOT AN OFFICIAL OEWD FORM</strong><p>This printable prototype reflects only pages 1–4 of a partially mapped application. It is not approved for government submission or proof of enrollment. Use the original PDF workflow for actual cases.</p></div>',
+    '<div class="warning"><strong>NOT AN OFFICIAL OEWD FORM</strong><p>This printable prototype reflects only pages 1–5 of a partially mapped application. It is not approved for government submission or proof of enrollment. Use the original PDF workflow for actual cases.</p></div>',
     body,
     '<section><h2>Review issues ('+issues.length+')</h2>'+issueContent+'</section>',
     '<section><h2>Pages not mapped ('+pendingPages.length+')</h2><ol>'+pending+'</ol></section>',
