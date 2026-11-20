@@ -197,3 +197,18 @@
   .ef-preview-top{align-items:flex-start}
   .ef-preview-top>strong{padding:7px 0}
 }
+
+
+/* Keep zoom controls in a compact image-viewer toolbar BELOW the preview. */
+.ef-preview-foot{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px 12px;
+  min-height:46px;
+  flex:0 0 auto;
+  background:#fff;
+  border-top:1px solid #e4ebf0;
+}
+.ef-preview-foot .ef-zoom-controls{margin:0}
+.ef-floating-body .ef-preview-foot{flex:0 0 auto}
