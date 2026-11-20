@@ -2,6 +2,7 @@ import React, {useMemo, useState} from 'react';
 import {EDITOR_PAGES, MAPPED_PAGES, LIST_A, LIST_B, LIST_C, SELECTIVE_REGISTERED, SELECTIVE_EXEMPT, ELIGIBILITY_OPTIONS, enrollmentIssues} from './formEditorRules.js';
 import './formEditor.css';
 import {buildEnrollmentReviewHtml} from './exportReviewHtml.js';
+import FloatingPanel from './FloatingPanel.jsx';
 
 const blankOption = {value:'', label:'Choose an option…'};
 function initialValues(record, client) {
@@ -83,6 +84,14 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [exportNotice, setExportNotice] = useState('');
   const [focus, setFocus] = useState('');
+  const [floating, setFloating] = useState({form:false, preview:false});
+  const [frontPanel, setFrontPanel] = useState('preview');
+  const popOut = kind => {
+    setFloating(prev=>({...prev,[kind]:true}));
+    setFrontPanel(kind);
+    if(kind==='preview')setShowPreview(true);
+  };
+  const dock = kind => setFloating(prev=>({...prev,[kind]:false}));
   const values = initialValues(record,client);
   const issueByPage = useMemo(()=>Object.fromEntries(
     Array.from({length:MAPPED_PAGES},(_,i)=>[i+1,enrollmentIssues(values,i+1)])
@@ -124,31 +133,9 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
   const completed = [1,2,3,4].filter(n=>checked[n] && issueByPage[n].length===0).length;
   const selectOptions = (id,label,items,focusGroup) => <Choice id={id} label={label} value={values[id]} options={items} issue={issue(id)} onFocus={()=>setFocus(focusGroup||id)} onChange={v=>update(id,v)}/>;
   const input = (id,label,extra={}) => <Field id={id} label={label} value={values[id]} onChange={v=>update(id,v)} issue={issue(id)} onFocus={()=>setFocus(id)} {...extra}/>;
-  return <div className="ef-app">
-    <div className="ef-toolbar">
-      <div><span className="ef-overline">ENROLLMENT / 201 · WIOA ADULT</span><h2>201 Master Application</h2><p>Complete the form in CMS · compare with the original page order</p></div>
-      <div className="ef-toolbar-actions"><span className="ef-autosave">● Browser draft</span><button className="ef-btn" onClick={onSave}>Save Draft</button>{reviewMode?<button className="ef-btn ef-btn-primary" onClick={()=>setReviewMode(false)}>Continue Editing</button>:<button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enrollment ↗</button>}</div>
-    </div>
-    <div className="ef-statusline">
-      <div><strong>{completed} of 4</strong> mapped pages checked <span>· Pages 5–12 awaiting mapping</span></div>
-      <div className="ef-status-actions">{reviewMode?<span className="ef-review-active">Review mode</span>:<button onClick={reviewAll}>Review All {allIssues.length>0?'· '+allIssues.length+' items':''}</button>}</div>
-    </div>
-    <div className={'ef-layout'+(railCollapsed?' ef-rail-collapsed':'')}>
-      <aside className="ef-rail">
-        <div className="ef-rail-head"><div><span className="ef-rail-heading">FORM PAGES</span>{!railCollapsed&&<small>1–12</small>}</div><button type="button" className="ef-rail-toggle" onClick={()=>setRailCollapsed(v=>!v)} aria-expanded={!railCollapsed} title={railCollapsed?'Expand form contents':'Collapse form contents'} aria-label={railCollapsed?'Expand form contents':'Collapse form contents'}>{railCollapsed?'›':'‹'}</button></div>
-        {EDITOR_PAGES.map((label,i)=>{const number=i+1;const mapped=number<=MAPPED_PAGES;const didCheck=checked[number];const count=issueByPage[number]?.length||0;return <button type="button" key={number} className={'ef-page'+(page===number?' selected':'')} onClick={()=>goPage(number)} title={label} aria-label={'Page '+number+' · '+label} aria-current={page===number?'page':undefined}>
-          <span className="ef-page-number">{String(number).padStart(2,'0')}</span>{!railCollapsed&&<span className="ef-page-copy"><strong>{label}</strong><small>{!mapped?'Mapping pending':didCheck?(count?count+' to review':'Checked · clear'):'Not checked'}</small></span>}
-          {mapped&&didCheck&&<span className={'ef-page-dot'+(count?' warn':' done')}/>}
-        </button>})}
-        
-      </aside>
-      <section className="ef-editor">
-        <div className="ef-section-head"><div><span className="ef-overline">{reviewMode?'REVIEW MODE':'PAGE '+page+' OF 12'}</span><h3>{reviewMode?'Form Check & Review':EDITOR_PAGES[page-1]}</h3><p>{reviewMode?'Review missing and potentially incorrect answers before exporting.':'Follow the original form order. Save and revisit any page.'}</p></div><div className="ef-heading-actions">{!showPreview&&<button type="button" className="ef-btn" onClick={()=>setShowPreview(true)}>Show Preview</button>}{!reviewMode&&<span className={'ef-page-state'+(page>MAPPED_PAGES?' muted':checked[page]&&issues.length?' warning':'')}>{page>MAPPED_PAGES?'Mapping pending':checked[page]?(issues.length?issues.length+' issues':'Checked · clear'):'Not checked'}</span>}</div></div>
-        {!reviewMode&&<nav className="ef-pagination" aria-label="Form page navigation">
-          <button type="button" className="ef-page-arrow" aria-label="Previous page" title="Previous page" disabled={page===1} onClick={()=>goPage(page-1)}>‹</button>
-          <div className="ef-pagination-numbers">{EDITOR_PAGES.map((label,i)=><button type="button" key={i} className={'ef-number-btn'+(page===i+1?' active':'')} aria-label={'Page '+(i+1)+': '+label} aria-current={page===i+1?'page':undefined} onClick={()=>goPage(i+1)}>{i+1}</button>)}</div>
-          <button type="button" className="ef-page-arrow" aria-label="Next page" title="Next page" disabled={page===12} onClick={()=>goPage(page+1)}>›</button>
-        </nav>}
+  const formPanel = (
+    <section className="ef-editor">
+        <div className="ef-section-head"><div><span className="ef-overline">{reviewMode?'REVIEW MODE':'PAGE '+page+' OF 12'}</span><h3>{reviewMode?'Form Check & Review':EDITOR_PAGES[page-1]}</h3><p>{reviewMode?'Review missing and potentially incorrect answers before exporting.':'Follow the original form order. Save and revisit any page.'}</p></div><div className="ef-heading-actions">{!floating.form&&<button type="button" className="ef-btn ef-popout-btn" onClick={()=>popOut('form')} title="Open the form as a movable, resizable window">Pop Out Form ↗</button>}{!showPreview&&<button type="button" className="ef-btn" onClick={()=>setShowPreview(true)}>Show Preview</button>}{!reviewMode&&<span className={'ef-page-state'+(page>MAPPED_PAGES?' muted':checked[page]&&issues.length?' warning':'')}>{page>MAPPED_PAGES?'Mapping pending':checked[page]?(issues.length?issues.length+' issues':'Checked · clear'):'Not checked'}</span>}</div></div>
         {reviewMode&&<div className="ef-review-panel" role="region" aria-label="Enrollment form review">
           <div className="ef-review-overview"><strong>{allIssues.length} items found on mapped pages</strong><p>Review the list below. Pages 5–12 are still awaiting field mapping, so this prototype cannot confirm the entire 201 application is ready for enrollment.</p></div>
           {allIssues.length?allIssues.map((item,i)=><button type="button" className="ef-review-issue" key={item.page+'-'+item.key+'-'+i} onClick={()=>{goPage(item.page);setReviewMode(false)}}><span>Page {item.page}</span><strong>{item.label}</strong><small>{item.message}</small><b>›</b></button>):<p className="ef-review-clear">No issues detected on the four mapped pages.</p>}
@@ -188,11 +175,40 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
         {!reviewMode&&checked[page]&&page<=MAPPED_PAGES&&<div className={'ef-check-results'+(issues.length?' has-issues':'')}><h4>{issues.length?issues.length+' items to review':'No detected issues on this mapped page'}</h4>{issues.length?issues.map((i,n)=><p key={i.key+n}><strong>{i.label}:</strong> {i.message}</p>):<p>Only prototype checks were run. This is not an eligibility approval.</p>}</div>}
         {!reviewMode&&<div className="ef-bottom"><button type="button" className="ef-btn ef-bottom-arrow" disabled={page===1} onClick={()=>goPage(page-1)} aria-label="Previous page">‹</button><div><span className="ef-bottom-page">Page {page} / 12</span><button className="ef-btn" disabled={page>MAPPED_PAGES} onClick={checkPage}>Check Page</button><button type="button" className="ef-btn ef-bottom-arrow" disabled={page===12} onClick={()=>goPage(page+1)} aria-label="Next page">›</button></div></div>}
       </section>
-      {showPreview&&<aside className="ef-preview-pane"><div className="ef-preview-top"><div><strong>Form reference</strong><small>Original page order · live layout comparison</small></div><div className="ef-preview-controls"><span>Page {page}</span><button className="ef-btn ef-preview-toggle" onClick={()=>setShowPreview(false)}>Hide Preview</button></div></div>
+  );
+  const previewPanel = (
+    <aside className="ef-preview-pane"><div className="ef-preview-top"><div><strong>Form reference</strong><small>Original page order · live layout comparison</small></div><div className="ef-preview-controls"><span>Page {page}</span>{!floating.preview&&<button type="button" className="ef-btn ef-popout-btn" onClick={()=>popOut('preview')} title="Open the reference preview as a movable, resizable window">Pop Out ↗</button>}<button type="button" className="ef-btn ef-preview-toggle" onClick={()=>{setShowPreview(false);dock('preview')}}>Hide Preview</button></div></div>
         <div className="ef-preview-scroll"><PaperPreview page={page} values={values} focus={focus}/></div>
         <div className="ef-preview-foot">Layout recreation for review only. This is <strong>not</strong> the actual generated OEWD PDF.</div>
-      </aside>}
+      </aside>
+  );
+  return <div className="ef-app">
+    <div className="ef-toolbar">
+      <div><span className="ef-overline">ENROLLMENT / 201 · WIOA ADULT</span><h2>201 Master Application</h2><p>Complete the form in CMS · compare with the original page order</p></div>
+      <div className="ef-toolbar-actions"><span className="ef-autosave">● Browser draft</span><button className="ef-btn" onClick={onSave}>Save Draft</button>{reviewMode?<button className="ef-btn ef-btn-primary" onClick={()=>setReviewMode(false)}>Continue Editing</button>:<button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enrollment ↗</button>}</div>
     </div>
+    <div className="ef-statusline">
+      <div><strong>{completed} of 4</strong> mapped pages checked <span>· Pages 5–12 awaiting mapping</span></div>
+      <div className="ef-status-actions">{reviewMode?<span className="ef-review-active">Review mode</span>:<button onClick={reviewAll}>Review All {allIssues.length>0?'· '+allIssues.length+' items':''}</button>}</div>
+    </div>
+    <div className={'ef-layout'+(railCollapsed?' ef-rail-collapsed':'')+(floating.form?' ef-form-popped':'')+(floating.preview&&showPreview?' ef-preview-popped':'')}>
+      <aside className="ef-rail">
+        <div className="ef-rail-head"><div><span className="ef-rail-heading">FORM PAGES</span>{!railCollapsed&&<small>1–12</small>}</div><button type="button" className="ef-rail-toggle" onClick={()=>setRailCollapsed(v=>!v)} aria-expanded={!railCollapsed} title={railCollapsed?'Expand form contents':'Collapse form contents'} aria-label={railCollapsed?'Expand form contents':'Collapse form contents'}>{railCollapsed?'›':'‹'}</button></div>
+        {EDITOR_PAGES.map((label,i)=>{const number=i+1;const mapped=number<=MAPPED_PAGES;const didCheck=checked[number];const count=issueByPage[number]?.length||0;return <button type="button" key={number} className={'ef-page'+(page===number?' selected':'')} onClick={()=>goPage(number)} title={label} aria-label={'Page '+number+' · '+label} aria-current={page===number?'page':undefined}>
+          <span className="ef-page-number">{String(number).padStart(2,'0')}</span>{!railCollapsed&&<span className="ef-page-copy"><strong>{label}</strong><small>{!mapped?'Mapping pending':didCheck?(count?count+' to review':'Checked · clear'):'Not checked'}</small></span>}
+          {mapped&&didCheck&&<span className={'ef-page-dot'+(count?' warn':' done')}/>}
+        </button>})}
+        
+      </aside>
+      {floating.form
+        ? <div className="ef-pop-placeholder ef-pop-form"><strong>Form Editor is floating</strong><p>Use the movable Form Editor window to enter data and compare it with the preview.</p><button type="button" className="ef-btn" onClick={()=>dock('form')}>Dock Form</button></div>
+        : formPanel}
+      {showPreview && (floating.preview
+        ? <div className="ef-pop-placeholder ef-pop-preview"><strong>Reference Preview is floating</strong><p>The reference follows the selected page and stays updated as you type.</p><button type="button" className="ef-btn" onClick={()=>dock('preview')}>Dock Preview</button></div>
+        : previewPanel)}
+    </div>
+    {floating.form&&<FloatingPanel kind="form" title={'Enrollment Form · Page '+page} active={frontPanel==='form'} onBringToFront={()=>setFrontPanel('form')} onDock={()=>dock('form')}>{formPanel}</FloatingPanel>}
+    {floating.preview&&showPreview&&<FloatingPanel kind="preview" title={'Reference Preview · Page '+page} active={frontPanel==='preview'} onBringToFront={()=>setFrontPanel('preview')} onDock={()=>dock('preview')}>{previewPanel}</FloatingPanel>}
     {exportModal&&<div role="dialog" aria-modal="true" aria-labelledby="ef-export-title" className="ef-review-backdrop" onClick={()=>setExportModal(false)}>
       <div className="ef-review-dialog ef-export-dialog" onClick={e=>e.stopPropagation()}>
         <div className="ef-review-header"><div><span className="ef-overline">EXPORT FOR ENROLLMENT</span><h3 id="ef-export-title">Check the form before exporting</h3></div><button type="button" className="ef-btn" onClick={()=>setExportModal(false)} aria-label="Close export dialog">✕</button></div>
