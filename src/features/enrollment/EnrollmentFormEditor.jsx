@@ -143,7 +143,7 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
         
       </aside>
       <section className="ef-editor">
-        <div className="ef-section-head"><div><span className="ef-overline">{reviewMode?'REVIEW MODE':'PAGE '+page+' OF 12'}</span><h3>{reviewMode?'Form Check & Review':EDITOR_PAGES[page-1]}</h3><p>{reviewMode?'Review missing and potentially incorrect answers before exporting.':'Follow the original form order. Save and revisit any page.'}</p></div>{!reviewMode&&<span className={'ef-page-state'+(page>MAPPED_PAGES?' muted':checked[page]&&issues.length?' warning':'')}>{page>MAPPED_PAGES?'Mapping pending':checked[page]?(issues.length?issues.length+' issues':'Checked · clear'):'Not checked'}</span>}</div>
+        <div className="ef-section-head"><div><span className="ef-overline">{reviewMode?'REVIEW MODE':'PAGE '+page+' OF 12'}</span><h3>{reviewMode?'Form Check & Review':EDITOR_PAGES[page-1]}</h3><p>{reviewMode?'Review missing and potentially incorrect answers before exporting.':'Follow the original form order. Save and revisit any page.'}</p></div><div className="ef-heading-actions">{!showPreview&&<button type="button" className="ef-btn" onClick={()=>setShowPreview(true)}>Show Preview</button>}{!reviewMode&&<span className={'ef-page-state'+(page>MAPPED_PAGES?' muted':checked[page]&&issues.length?' warning':'')}>{page>MAPPED_PAGES?'Mapping pending':checked[page]?(issues.length?issues.length+' issues':'Checked · clear'):'Not checked'}</span>}</div></div>
         {!reviewMode&&<nav className="ef-pagination" aria-label="Form page navigation">
           <button type="button" className="ef-page-arrow" aria-label="Previous page" title="Previous page" disabled={page===1} onClick={()=>goPage(page-1)}>‹</button>
           <div className="ef-pagination-numbers">{EDITOR_PAGES.map((label,i)=><button type="button" key={i} className={'ef-number-btn'+(page===i+1?' active':'')} aria-label={'Page '+(i+1)+': '+label} aria-current={page===i+1?'page':undefined} onClick={()=>goPage(i+1)}>{i+1}</button>)}</div>
@@ -192,7 +192,6 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
         <div className="ef-preview-scroll"><PaperPreview page={page} values={values} focus={focus}/></div>
         <div className="ef-preview-foot">Layout recreation for review only. This is <strong>not</strong> the actual generated OEWD PDF.</div>
       </aside>}
-      {!showPreview&&<button type="button" className="ef-preview-reopen" onClick={()=>setShowPreview(true)}>Show Preview ›</button>}
     </div>
     {exportModal&&<div role="dialog" aria-modal="true" aria-labelledby="ef-export-title" className="ef-review-backdrop" onClick={()=>setExportModal(false)}>
       <div className="ef-review-dialog ef-export-dialog" onClick={e=>e.stopPropagation()}>
