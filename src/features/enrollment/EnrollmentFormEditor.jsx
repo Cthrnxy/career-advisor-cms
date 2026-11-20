@@ -79,6 +79,8 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
   const [page, setPage] = useState(1);
   const [checked, setChecked] = useState({});
   const [showPreview, setShowPreview] = useState(true);
+  const [previewZoom, setPreviewZoom] = useState(100);
+  const adjustZoom = delta => setPreviewZoom(current=>Math.min(200,Math.max(50,current+delta)));
   const [reviewMode, setReviewMode] = useState(false);
   const [exportModal, setExportModal] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
@@ -176,8 +178,12 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
       </section>
   );
   const previewPanel = (
-    <aside className="ef-preview-pane"><div className="ef-preview-top"><div><strong>Form reference</strong><small>Original page order · live layout comparison</small></div><div className="ef-preview-controls"><span>Page {page}</span>{!floating.preview&&<button type="button" className="ef-btn ef-popout-btn" onClick={()=>popOut('preview')} title="Open the reference preview as a movable, resizable window">Pop Out ↗</button>}<button type="button" className="ef-btn ef-preview-toggle" onClick={()=>{setShowPreview(false);dock('preview')}}>Hide Preview</button></div></div>
-        <div className="ef-preview-scroll"><PaperPreview page={page} values={values} focus={focus}/></div>
+    <aside className="ef-preview-pane"><div className="ef-preview-top"><strong>Form Preview</strong><div className="ef-preview-controls"><div className="ef-zoom-controls" role="group" aria-label="Form preview zoom">
+          <button type="button" title="Zoom out" aria-label="Zoom out preview" onClick={()=>adjustZoom(-25)} disabled={previewZoom<=50}>−</button>
+          <button type="button" className="ef-zoom-value" title="Reset zoom to 100%" aria-label={'Reset zoom to 100%, currently '+previewZoom+'%'} onClick={()=>setPreviewZoom(100)}>{previewZoom}%</button>
+          <button type="button" title="Zoom in" aria-label="Zoom in preview" onClick={()=>adjustZoom(25)} disabled={previewZoom>=200}>+</button>
+        </div>{!floating.preview&&<button type="button" className="ef-btn ef-popout-btn" onClick={()=>popOut('preview')} title="Pop out preview" aria-label="Pop out form preview">Pop Out ↗</button>}<button type="button" className="ef-btn ef-preview-toggle" onClick={()=>{setShowPreview(false);dock('preview')}}>Hide</button></div></div>
+        <div className="ef-preview-scroll"><div className="ef-preview-zoom-stage" style={{zoom:previewZoom/100}}><PaperPreview page={page} values={values} focus={focus}/></div></div>
         <div className="ef-preview-foot">Layout recreation for review only. This is <strong>not</strong> the actual generated OEWD PDF.</div>
       </aside>
   );
