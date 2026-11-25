@@ -1,15 +1,16 @@
 import React,{useMemo,useState} from 'react';
 import {enrolledCases,dueFollowupCases} from '../../caseWorkflow.js';
-import {homepageAppointments,homepageTodos} from './homeDemo.js';
+import {calendarTasks,dateKey,listAppointments} from '../calendar/calendarModel.js';
 import {normalizeHomeSettings} from '../../homeSettings.js';
 import './home.css';
 const formatDay=iso=>iso?new Date(iso+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
 const daysSince=iso=>{if(!iso)return '—';const start=new Date(iso+'T12:00:00');const now=new Date();now.setHours(12,0,0,0);return Math.max(0,Math.round((now-start)/86400000))+' days';};
 const searchText=c=>([c.name,c.id,c.phone,...(c.cases||[]).map(r=>r.applicationNumber)].join(' ')).toLowerCase();
-export default function HomeDashboard({clients,onOpenClient,onOpenCase,onSearch,onAddClient,onReady,onExited,onEnrolled,onFollowups,onCalendar,homeSettings,onCustomize}){
+export default function HomeDashboard({clients,onOpenClient,onOpenCase,onSearch,onAddClient,onReady,onExited,onEnrolled,onFollowups,onCalendar,onOpenAppointment,homeSettings,onCustomize}){
  const [search,setSearch]=useState('');
  const [focus,setFocus]=useState(false);
- const [done,setDone]=useState({});
+ const homepageAppointments=listAppointments(clients).filter(a=>!a.completed&&a.date>=dateKey());
+ const homepageTodos=calendarTasks(clients).filter(t=>t.dueDate?t.dueDate<=dateKey():!t.date||t.date<=dateKey());
  const suggestions=useMemo(()=>search.trim()?clients.filter(c=>searchText(c).includes(search.trim().toLowerCase())).slice(0,6):[],[clients,search]);
  const enrolled=useMemo(()=>enrolledCases(clients),[clients]);
  const followups=dueFollowupCases(clients);
@@ -30,13 +31,15 @@ export default function HomeDashboard({clients,onOpenClient,onOpenCase,onSearch,
    appointments:<React.Fragment>
    <section className="home-panel">
     <div className="home-panelhead"><h3>▦ &nbsp; Appointments ({homepageAppointments.length})</h3><button onClick={onCalendar}>View All &nbsp; ›</button></div>
-    {homepageAppointments.map(a=><button className="home-appointment" key={a.time+a.clientId} onClick={()=>onOpenClient(a.clientId)}><span className="home-time">{a.time}</span><strong>{a.name}</strong><span>·</span><span>{a.reason}</span><span className="home-appointment-arrow">›</span></button>)}
+    {homepageAppointments.slice(0,5).map(a=><button className="home-appointment" key={a.id+a.clientId} onClick={()=>onOpenAppointment(a.clientId,a)}><span className="home-time">{a.date} · {a.time||'Time TBD'}</span><strong>{a.name}</strong><span>·</span><span>{a.reason}</span><span className="home-appointment-arrow">›</span></button>)}
+    {!homepageAppointments.length&&<p className="home-empty">No upcoming appointments.</p>}
    </section>
    </React.Fragment>,
    todo:<React.Fragment>
    <section className="home-panel">
     <div className="home-panelhead"><h3>☑ &nbsp; To-do ({homepageTodos.length})</h3><button onClick={onCalendar}>View All &nbsp; ›</button></div>
-    {homepageTodos.map(task=><label className="home-task" key={task.id}><input type="checkbox" checked={!!done[task.id]} onChange={e=>setDone(p=>({...p,[task.id]:e.target.checked}))}/><span className={done[task.id]?'task-finished':''}>{task.label}</span><button title={'Open '+task.label} onClick={()=>onOpenClient(task.clientId)} type="button">›</button></label>)}
+    {homepageTodos.slice(0,5).map(task=><div className="home-task" key={task.clientId+task.id}><span>{task.name} · {task.label}</span><button title={'Open '+task.label} onClick={()=>onOpenCase(task.record,task.clientId)} type="button">Open case</button></div>)}
+    {!homepageTodos.length&&<p className="home-empty">No case tasks due.</p>}
    </section>
    </React.Fragment>,
    enrolled:<React.Fragment>

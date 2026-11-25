@@ -6,7 +6,7 @@ const visible=v=>v||'—';
 const asDate=v=>v?new Date(v+'T12:00:00').toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}):'—';
 function Meta({label,value}){return <div className="client-meta"><span>{label}</span><strong>{visible(value)}</strong></div>}
 function Field({label,value,onChange}){return <label className="client-field"><span>{label}</span><input value={value||''} onChange={e=>onChange(e.target.value)}/></label>}
-export default function ClientProfile({client,editing,profile,onProfileChange,onEdit,onCancel,onSave,onNewCase,onOpenCase,onUpload,onAddVisit,onEditVisit,onDeleteVisit,onNewAppointment}){
+export default function ClientProfile({client,editing,profile,onProfileChange,onEdit,onCancel,onSave,onNewCase,onOpenCase,onUpload,onAddVisit,onEditVisit,onDeleteVisit,onNewAppointment,onOpenAppointment}){
  const docs=client.docs||[], cases=client.cases||[];
  const initials=client.name.trim().split(/\s+/).slice(0,2).map(x=>x[0]?.toUpperCase()).join('');
  const docRows=DOCUMENT_TYPES.filter(kind=>!kind.includes('Signature'));
@@ -54,7 +54,7 @@ export default function ClientProfile({client,editing,profile,onProfileChange,on
   <div className="client-pair client-services-pair">
       <section className="client-section">
         <div className="client-section-title"><h2>Appointments</h2><button className="client-text-button" onClick={onNewAppointment}>+ New Appointment</button></div>
-        {appointments.length?appointments.map(a=><div className="client-visit" key={a.id}><div><strong>{a.reason||'Appointment'}</strong><span>{a.time||'Time not set'}</span></div><time>{asDate(a.date)}</time></div>):<div className="client-empty">No appointments recorded.</div>}
+        {appointments.length?appointments.map(a=><div className="client-visit" key={a.id}><button className="client-appointment-open" onClick={()=>onOpenAppointment(a)}><strong>{a.reason||'Appointment'}</strong><span>{a.time||'Time TBD'} · {a.completed?'Completed':'Not completed'}</span></button><time>{asDate(a.date)}</time></div>):<div className="client-empty">No appointments recorded.</div>}
       </section>
       <section className="client-section">
         <div className="client-section-title"><div><h2>Client Visits & Services <span className="client-count">{visits.length}</span></h2><p>A brief record of each contact and the help provided.</p></div><button className="client-text-button" onClick={onAddVisit}>+ Add Visit</button></div>
