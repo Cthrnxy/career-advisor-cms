@@ -10,6 +10,7 @@ function initialValues(record, client) {
   return {
     firstName: bits[0] || '', lastName: bits.slice(1).join(' ') || '',
     phone: client.phone || '', email: client.email || '',
+    address: [client.address,client.unit].filter(Boolean).join(', '),city:client.city||'',state:client.state||'',zip:client.zip||'',
     applicationDate: record.applicationDate || '', applicationNumber: record.applicationNumber || '',
     agency: 'SHE', ...((record.fields || {}).enrollmentEditor || {})
   };
