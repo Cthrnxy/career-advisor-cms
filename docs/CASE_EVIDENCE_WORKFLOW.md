@@ -42,3 +42,14 @@ Validation: unit tests, editable PDF field readback, PDF page render inspection 
 - Outcomes: Job Found, Training or Education, Unable to Contact, Other. Other requires explanatory text.
 - Completed Exit edits and reopening retain before/after snapshots and timestamps. Exit date changes and reopening flag Follow-up for review while preserving existing Follow-up records. This browser-local history does not provide authenticated staff attribution.
 - Browser interaction/visual QA remains unavailable. Unit checks cover requirements, state transitions, drafts, activity deletion/edit guards and preservation of Follow-up history.
+
+## Follow-up details
+
+- Case rows display round, calendar quarter, status, completed date and linked file. Homepage and Follow-up list rows open the corresponding detail panel directly with client and Case context.
+- Prior round information is reference-only. New rounds default completed date to today (editable) without copying prior notes or employment answers.
+- Contact attempts save separately: date, Phone/Text/Email/In Person/Other, Reached/No Answer/Left Message/Invalid Contact/Other, optional note. Attempts never mark a round complete.
+- Employment is Employed/Not Employed/Unknown; employer, position, hourly wage and weekly hours are optional. Completed date plus file remain the completion criteria.
+- Missing File and Draft states remain pending. Removing a completed round's file returns it to pending and records the change. Saved edits and document replacement/removal retain timestamped history.
+- CA-selected next contact dates schedule the round in the calendar. Completing the round clears its planned task; scheduled later rounds do not hide the earliest incomplete one.
+- Due lists retain overdue-first quarter ordering. All required rounds complete the Case automatically. This is local demo state, not an external submission or authenticated audit log.
+- Validation: 59 tests and production build pass. Browser visual/interaction QA remains pending.

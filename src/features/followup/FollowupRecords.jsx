@@ -1,0 +1,5 @@
+import React from 'react';
+import {followupCount} from '../../caseWorkflow.js';
+import {roundStatus,quarterLabel} from './followupModel.js';
+import {documentTitle} from '../documents/documentLabels.js';
+export default function FollowupRecords({record,onOpen}){return <details className="case-section"><summary>Follow-up Records</summary><section className="card"><h2>Follow-up Records</h2><div className="table-scroll"><table><thead><tr><th>Round</th><th>Quarter</th><th>Status</th><th>Completed date</th><th>File</th><th></th></tr></thead><tbody>{Array.from({length:followupCount(record)},(_,i)=>{const r=record.followups?.[i]||{},file=record.attachments?.find(f=>f.name===r.file);return <tr key={i}><td>Follow-up {i+1}</td><td>{quarterLabel(record,i)}</td><td>{roundStatus(r)}</td><td>{r.date||'—'}</td><td>{file?documentTitle(file):r.file?'Previously linked file':'Missing'}</td><td><button className="btn secondary" onClick={()=>onOpen(i)}>Open</button></td></tr>})}</tbody></table></div></section></details>}

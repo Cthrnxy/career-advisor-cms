@@ -6,7 +6,7 @@ import './home.css';
 const formatDay=iso=>iso?new Date(iso+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
 const daysSince=iso=>{if(!iso)return '—';const start=new Date(iso+'T12:00:00');const now=new Date();now.setHours(12,0,0,0);return Math.max(0,Math.round((now-start)/86400000))+' days';};
 const searchText=c=>([c.name,c.id,c.phone,...(c.cases||[]).map(r=>r.applicationNumber)].join(' ')).toLowerCase();
-export default function HomeDashboard({clients,onOpenClient,onOpenCase,onSearch,onAddClient,onReady,onExited,onEnrolled,onFollowups,onCalendar,onOpenAppointment,homeSettings,onCustomize}){
+export default function HomeDashboard({clients,onOpenClient,onOpenCase,onOpenFollowup,onSearch,onAddClient,onReady,onExited,onEnrolled,onFollowups,onCalendar,onOpenAppointment,homeSettings,onCustomize}){
  const [search,setSearch]=useState('');
  const [focus,setFocus]=useState(false);
  const homepageAppointments=listAppointments(clients).filter(a=>!a.completed&&a.date>=dateKey());
@@ -40,7 +40,7 @@ export default function HomeDashboard({clients,onOpenClient,onOpenCase,onSearch,
    todo:<React.Fragment>
    <section className="home-panel">
     <div className="home-panelhead"><h3>☑ &nbsp; To-do ({homepageTodos.length})</h3><button onClick={onCalendar}>View All &nbsp; ›</button></div>
-    {homepageTodos.slice(0,5).map(task=><div className="home-task" key={task.clientId+task.id}><span>{task.name} · {task.label}</span><button title={'Open '+task.label} onClick={()=>onOpenCase(task.record,task.clientId)} type="button">Open case</button></div>)}
+    {homepageTodos.slice(0,5).map(task=><div className="home-task" key={task.clientId+task.id+task.taskKey}><span>{task.name} · {task.label}</span><button title={'Open '+task.label} onClick={()=>onOpenCase(task.record,task.clientId)} type="button">Open case</button></div>)}
     {!homepageTodos.length&&<p className="home-empty">No case tasks due.</p>}
    </section>
    </React.Fragment>,
@@ -60,7 +60,7 @@ export default function HomeDashboard({clients,onOpenClient,onOpenCase,onSearch,
   <section className="home-panel home-enrolled home-followups">
    <div className="home-panelhead"><div><h3>◷ &nbsp; Follow-up &nbsp; ({followups.length})</h3><p>Exited Cases with follow-ups due this quarter or earlier</p></div><button onClick={onFollowups}>View All &nbsp; ›</button></div>
    <div className="home-table-scroll"><table className="home-follow-table"><thead><tr><th>Client Name</th><th>Program</th><th>Form Type</th><th>Exit Date</th><th>Status</th><th></th></tr></thead><tbody>
-    {followups.length?followups.slice(0,5).map(({client,record,round})=><tr key={client.id+':'+record.id} onClick={()=>onOpenCase(record,client.id)}><td><button type="button" className="home-client-link" onClick={e=>{e.stopPropagation();onOpenCase(record,client.id)}}>{client.name}</button></td><td>{record.program||client.program||'—'}</td><td><span className="home-form-chip">{record.form}</span></td><td>{formatDay(record.exit.date)}</td><td><span className="home-stage-chip">Follow-up {round}</span></td><td className="home-arrow">›</td></tr>):
+    {followups.length?followups.slice(0,5).map(({client,record,round})=><tr key={client.id+':'+record.id} onClick={()=>onOpenFollowup(record,client.id,round-1)}><td><button type="button" className="home-client-link" onClick={e=>{e.stopPropagation();onOpenFollowup(record,client.id,round-1)}}>{client.name}</button></td><td>{record.program||client.program||'—'}</td><td><span className="home-form-chip">{record.form}</span></td><td>{formatDay(record.exit.date)}</td><td><span className="home-stage-chip">Follow-up {round}</span></td><td className="home-arrow">›</td></tr>):
     <tr><td colSpan="6" className="home-empty">No Follow-up Cases due at the moment. The next round appears when its quarter begins.</td></tr>}
    </tbody></table></div>
    {followups.length>5&&<div className="home-table-footer">Showing 5 of {followups.length} Cases</div>}
