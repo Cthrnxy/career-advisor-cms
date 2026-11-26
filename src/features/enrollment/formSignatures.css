@@ -1,0 +1,6 @@
+.form-signatures .card-head{gap:20px;align-items:flex-start}
+.form-signatures p{font-size:14px;line-height:1.5}
+.form-signatures .card-head p{margin:8px 0 0;color:#697b8b}
+.form-signature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.form-signature-grid .input{font-size:14px}
+@media(max-width:850px){.form-signature-grid{grid-template-columns:1fr}.form-signatures .card-head{flex-wrap:wrap}}

@@ -1,7 +1,10 @@
 import React,{useEffect,useState} from 'react';
+import {confirmEnrollment} from './features/case/enrollment.js';
+import CaseSummary from './features/case/CaseSummary.jsx';
 import CalendarPage from './features/calendar/CalendarPage.jsx';
 import AppointmentPanel from './features/calendar/AppointmentPanel.jsx';
 import {completeAppointment} from './features/calendar/calendarModel.js';
+import FormSignatures from './features/enrollment/FormSignatures.jsx';
 import EnrollmentFormEditor from './features/enrollment/EnrollmentFormEditor.jsx';
 import HomeDashboard from './features/home/HomeDashboard.jsx';
 import CaseList from './features/home/CaseList.jsx';
@@ -21,14 +24,16 @@ const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+
 function Button({children,onClick,kind='secondary',disabled=false}){return <button type="button" onClick={onClick} className={'btn '+kind} disabled={disabled}>{children}</button>}
 function Card({title,action,children}){return <section className="card"><div className="card-head"><h2>{title}</h2>{action}</div>{children}</section>}
 function Label({text,value}){return <div className="label-value"><span>{text}</span><strong>{value||'—'}</strong></div>}
-function Input({label,value,onChange,type='text',placeholder=''}){return <label className="input"><span>{label}</span><input type={type} value={value||''} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/></label>}
+function Input({label,value,onChange,type='text',placeholder=''}){return <label className="input"><span>{label}</span><input type={type} value={value||''} onChange={e=>onChange(e.target.value)} onInput={type==='date'?e=>onChange(e.currentTarget.value):undefined} placeholder={placeholder}/></label>}
 function FormRows({items}){return <div className="field-grid">{items.map(([k,v])=><Label key={k} text={k} value={v}/>)}</div>}
 function App(){
 const[clients,setClients]=useState(load);
+const[showAllActivities,setShowAllActivities]=useState(false);
 const[homeSettings,setHomeSettings]=useState(loadHomeSettings);
 const[screen,setScreen]=useState('Home');
 const[clientId,setClientId]=useState('CL-1024');
 const[caseId,setCaseId]=useState('case-201');
+useEffect(()=>setShowAllActivities(false),[caseId]);
 const[query,setQuery]=useState('');
 const[clientListFilter,setClientListFilter]=useState('All');
 const[sidebarCollapsed,setSidebarCollapsed]=useState(false);
@@ -90,7 +95,7 @@ const backLabel=getRouteLabel(previous,previousClient,previousCase);
 const openClient=id=>switchView('Client Detail',id);
 const openCase=(c,id=client.id)=>switchView('Case Detail',id,c.id);
 const startProfile=()=>{setProfile({...client});setEditing(true)};
-const createEnrollment=()=>{const c=makeCase(formChoice);changeClient(client.id,x=>({...x,cases:[c,...x.cases]}));setModal('');openCase(c);flash('New Draft Case created')};
+const createEnrollment=()=>{if(!fields.program?.trim()){flash('Program is required');return}const c={...makeCase(formChoice),program:fields.program.trim()};changeClient(client.id,x=>({...x,cases:[c,...x.cases]}));setModal('');openCase(c);flash('New Draft Case created')};
 const saveExit=()=>{if(!fields.date){flash('Exit date required');return}changeCase(c=>({...c,exit:{date:fields.date,outcome:fields.outcome||'Job Found',evidence:fields.evidence||''}}));setModal('')};
 const openFollowup=index=>{
   const record=(current?.followups||[])[index]||{};
@@ -162,22 +167,24 @@ return <div className="shell">
  onDeleteVisit={index=>{if(window.confirm('Delete this visit note?'))changeClient(client.id,c=>({...c,visits:c.visits.filter((_,i)=>i!==index)}))}}
  onNewAppointment={()=>setAppointmentSelection({clientId:client.id})} onOpenAppointment={a=>setAppointmentSelection({clientId:client.id,appointment:a})}/>}
 
-{screen==='Case Detail'&&current&&<><Card title="Case Summary"><FormRows items={[['Form Type',current.form],['Application Date',current.applicationDate],['Application Number',current.applicationNumber],['Enrollment Date',current.enrollmentDate],['Exit Date',current.exit?.date],['Case Status',getStatus(current)]]}/><div className="right"><Button onClick={()=>{show('Case Summary');setFields({applicationDate:current.applicationDate,applicationNumber:current.applicationNumber,enrollmentDate:current.enrollmentDate})}}>Edit Summary</Button>{!current.enrolled&&<Button kind="primary" onClick={()=>{changeCase(c=>({...c,enrolled:true,enrollmentDate:c.enrollmentDate||today()}));flash('Enrollment recorded')}}>Mark Enrolled</Button>}</div></Card>
-<Card title="Enrollment Form"><Button onClick={()=>switchView('Form Editor')}>Open / Edit Form</Button><span className="muted"> Form editing does not create an additional Case.</span></Card>
-<Card title="Activity Records"><div className="right"><Button kind="primary" onClick={()=>show('Add Activity')}>+ Add Activity</Button></div><table><thead><tr><th>Activity Type</th><th>Completed Date</th><th>Notes</th></tr></thead><tbody>{current.activities.map((a,i)=><tr key={i}><td>{a.type}</td><td>{a.date}</td><td>{a.note||'—'}</td></tr>)}</tbody></table></Card>
-<Card title="Exit Record"><FormRows items={[['Exit Date',current.exit?.date],['Outcome',current.exit?.outcome],['Evidence',current.exit?.evidence||'File Pending']]}/><div className="right"><Button onClick={()=>{show('Exit');setFields({date:current.exit?.date||current.activities.filter(a=>a.type==='Job Searching').at(-1)?.date||'',outcome:current.exit?.outcome||'Job Found',evidence:current.exit?.evidence||''})}}>Record / Edit Exit</Button></div></Card>
-<Card title="Follow-up Records">
+{screen==='Case Detail'&&current&&<><CaseSummary key={current.id} client={client} record={current} onChange={changeCase} onEnroll={()=>{show('Confirm Enrollment');setFields({program:current.program||client.program||'',enrollmentDate:current.enrollmentDate||''})}}/>
+<details className="case-section"><summary>Enrollment Form</summary><Card title="Enrollment Form"><Button onClick={()=>switchView('Form Editor')}>Open / Edit Form</Button><span className="muted"> Form editing does not create an additional Case.</span></Card></details>
+<details className="case-section"><summary>Activity Records</summary><Card title="Activity Records"><div className="right"><Button kind="primary" onClick={()=>show('Add Activity')}>+ Add Activity</Button></div><table><thead><tr><th>Activity Type</th><th>Completed Date</th><th>Notes</th></tr></thead><tbody>{[...current.activities].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,showAllActivities?undefined:5).map((a,i)=><tr key={i}><td>{a.type}</td><td>{a.date}</td><td>{a.note||'—'}</td></tr>)}</tbody></table>{current.activities.length>5&&<div className="right"><Button onClick={()=>setShowAllActivities(v=>!v)}>{showAllActivities?'Show less':'View all activities'}</Button></div>}</Card></details>
+<details className="case-section"><summary>Exit Record</summary><Card title="Exit Record"><FormRows items={[['Exit Date',current.exit?.date],['Outcome',current.exit?.outcome],['Evidence',current.exit?.evidence||'File Pending']]}/><div className="right"><Button onClick={()=>{show('Exit');setFields({date:current.exit?.date||current.activities.filter(a=>a.type==='Job Searching').at(-1)?.date||'',outcome:current.exit?.outcome||'Job Found',evidence:current.exit?.evidence||''})}}>Record / Edit Exit</Button></div></Card></details>
+<details className="case-section"><summary>Follow-up Records</summary><Card title="Follow-up Records">
 <p className="muted">All rounds are editable at any time. Completed Date and File are both required to finish a round.</p>
 <div className="table-scroll"><table className="case-follow-table"><thead><tr><th>Follow-up</th><th>Completed Date</th><th>File</th><th>Action</th></tr></thead><tbody>
 {Array.from({length:followupCount(current)},(_,i)=>{const round=current.followups?.[i];return <tr key={i}>
 <td><strong>Follow-up {i+1}</strong></td><td>{round?.date||'—'}</td><td>{round?.file||'—'}</td><td><Button onClick={()=>openFollowup(i)}>Edit</Button></td>
 </tr>})}
 </tbody></table></div>
-</Card></>}
+</Card></details></>}
+{screen==='Form Editor'&&current&&<FormSignatures key={current.id} client={client} record={current} onChange={changeCase} onManage={()=>openClient(client.id)}/>}
 {screen==='Form Editor'&&current&&(current.form==='201'?<EnrollmentFormEditor key={current.id} record={current} client={client} onChange={next=>changeCase(c=>({...c,applicationDate:next.applicationDate||'',applicationNumber:next.applicationNumber||'',fields:{...(c.fields||{}),enrollmentEditor:next}}))} onSave={()=>flash('201 Form draft saved in this browser')}/>:<div className="editor"><Card title="Editable Fields"><Input label="Application Date" value={current.applicationDate} onChange={v=>changeCase(c=>({...c,applicationDate:v}))}/><Input label="Application Number" value={current.applicationNumber} onChange={v=>changeCase(c=>({...c,applicationNumber:v}))}/><Input label="Client Name" value={client.name} onChange={()=>{}}/><p className="muted">Full 999 field mapping is planned. This demo saves locally.</p></Card><Card title="PDF Preview"><div className="pdf-placeholder"><b>999 Form</b><p>Actual PDF rendering and mapping will be connected in a later phase.</p></div></Card></div>)}
 </main></div>
 {modal&&<div className="backdrop" onClick={()=>setModal('')}><div className="dialog" onClick={e=>e.stopPropagation()}><div className="modal-head"><h2>{({ 'New Enrollment':'Start New Enrollment','Add Follow-up':'Record Follow-up','Client File':'Upload Client Document'})[modal]||modal}</h2><Button onClick={()=>setModal('')}>✕</Button></div>
-{modal==='New Enrollment'&&<><p>Select the form type for a new independent Draft Case.</p><label className="choice"><input type="radio" checked={formChoice==='201'} onChange={()=>setFormChoice('201')}/> 201 — WIOA Adult</label><label className="choice"><input type="radio" checked={formChoice==='999'} onChange={()=>setFormChoice('999')}/> 999 — General Fund</label><div className="right"><Button onClick={()=>setModal('')}>Cancel</Button><Button kind="primary" onClick={createEnrollment}>Create Draft</Button></div></>}
+{modal==='Confirm Enrollment'&&<form onSubmit={e=>{e.preventDefault();try{const next=confirmEnrollment(current,fields.program,fields.enrollmentDate);changeCase(()=>next);setModal('');flash('Enrollment recorded')}catch(error){setFields(f=>({...f,error:error.message}))}}}><p>Confirm the program and choose the actual enrollment date. Documents and signatures can be added later.</p><Input label="Program (required)" value={fields.program} onChange={v=>setFields(f=>({...f,program:v,error:''}))}/><Input type="date" label="Enrollment Date" value={fields.enrollmentDate} onChange={v=>setFields(f=>({...f,enrollmentDate:v,error:''}))}/>{fields.error&&<p role="alert" className="document-error">{fields.error}</p>}<div className="right"><Button onClick={()=>setModal('')}>Cancel</Button><button className="btn primary" type="submit">Confirm Enrollment</button></div></form>}
+{modal==='New Enrollment'&&<><p>Select the form type for a new independent Draft Case.</p><label className="choice"><input type="radio" checked={formChoice==='201'} onChange={()=>setFormChoice('201')}/> 201 — WIOA Adult</label><label className="choice"><input type="radio" checked={formChoice==='999'} onChange={()=>setFormChoice('999')}/> 999 — General Fund</label><Input label="Program (required)" value={fields.program} onChange={v=>setFields(f=>({...f,program:v}))} placeholder="e.g. NJC / IHSS, HCA, Hospitality"/><p>Client details, documents and signatures stay available. Activities, Exit and Follow-ups start empty.</p><div className="right"><Button onClick={()=>setModal('')}>Cancel</Button><Button kind="primary" disabled={!fields.program?.trim()} onClick={createEnrollment}>Create Draft</Button></div></>}
 {modal==='Case Summary'&&<><Input label="Application Date" value={fields.applicationDate} onChange={v=>setFields(x=>({...x,applicationDate:v}))}/><Input label="Application Number" value={fields.applicationNumber} onChange={v=>setFields(x=>({...x,applicationNumber:v}))}/><Input label="Enrollment Date" value={fields.enrollmentDate} onChange={v=>setFields(x=>({...x,enrollmentDate:v}))}/><Button kind="primary" onClick={()=>{changeCase(c=>({...c,...fields}));setModal('')}}>Save Changes</Button></>}
 {modal==='Add Activity'&&<><label className="input"><span>Activity Type</span><select value={fields.type||'Job Searching'} onChange={e=>setFields(f=>({...f,type:e.target.value}))}><option>Job Searching</option><option>IEP</option><option>Other</option></select></label><Input type="date" label="Completed Date" value={fields.date} onChange={v=>setFields(f=>({...f,date:v}))}/><Input label="Optional Note" value={fields.note} onChange={v=>setFields(f=>({...f,note:v}))}/><Button kind="primary" onClick={()=>{if(!fields.date){flash('Date required');return}changeCase(c=>({...c,activities:[...c.activities,{type:fields.type||'Job Searching',date:fields.date,note:fields.note||''}]}));setModal('')}}>Save Activity</Button></>}
 {modal==='Exit'&&<><Input label="Exit Date" value={fields.date} onChange={v=>setFields(f=>({...f,date:v}))}/><Input label="Outcome" value={fields.outcome} onChange={v=>setFields(f=>({...f,outcome:v}))}/><div className="action-line"><Button onClick={()=>setModal('Select Existing File')}>Select Existing File</Button><Button onClick={()=>setModal('Upload New File')}>Upload New File</Button></div><p>Linked Evidence: {fields.evidence||'File Pending'}</p><Button kind="primary" onClick={saveExit}>Save Exit</Button></>}

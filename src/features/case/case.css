@@ -1,0 +1,8 @@
+.case-summary .card-head p{margin:8px 0 0;color:#66788a;font-size:14px}
+.case-section{margin:0 0 20px;border:1px solid #dfe6ed;border-radius:12px;background:white;overflow:hidden}
+.case-section>summary{padding:20px 24px;font-size:16px;font-weight:650;cursor:pointer;color:#344b60}
+.case-section[open]>summary{border-bottom:1px solid #e8edf2}
+.case-section>.card{border:0;margin:0;box-shadow:none}
+.case-section>.card>.card-head{display:none}
+.case-summary .label-value span,.case-summary .input{font-size:14px}
+
