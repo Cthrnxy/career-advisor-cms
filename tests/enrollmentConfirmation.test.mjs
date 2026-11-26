@@ -1,13 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {confirmEnrollment} from '../src/features/case/enrollment.js';
-test('enrollment permits no documents or signatures and preserves independent records',()=>{
- const record={form:'999',enrolled:false,applicationDate:'2026-11-01',activities:[],followups:[],exit:null,fields:{}};
- const next=confirmEnrollment(record,' IHSS ','2026-11-12');
- assert.equal(next.enrolled,true);assert.equal(next.program,'IHSS');assert.equal(next.enrollmentDate,'2026-11-12');
- assert.equal(next.applicationDate,record.applicationDate);assert.deepEqual(next.activities,[]);assert.equal(record.enrolled,false);
+import {recordApplicationNumber,recordSuccessfulExport} from '../src/features/case/enrollment.js';
+import {caseReadiness,evidenceValues} from '../src/features/case/caseFiles.js';
+import {buildCasePackage} from '../src/features/case/packageFiles.js';
+import {getCaseStatus} from '../src/caseWorkflow.js';
+const signatures={'Client Signature':{blobKey:'client'},'Employer Signature':{blobKey:'employer'}};
+const ready={form:'201',attachments:[{blobKey:'a',evidence:{A:['Passport']}}],signatureFiles:signatures};
+test('201 requires A or B+C and both signature copies',()=>{
+ assert.deepEqual(caseReadiness(ready),[]);
+ assert.deepEqual(caseReadiness({...ready,attachments:[{blobKey:'bc',evidence:{B:['ID'],C:['SSN']}}]}),[]);
+ assert.ok(caseReadiness({...ready,attachments:[{blobKey:'b',evidence:{B:['ID']}}]}).length);
+ assert.ok(caseReadiness({...ready,signatureFiles:{}}).includes('Client Signature'));
+ assert.equal(evidenceValues([{evidence:{A:['filename only']}}]).listA,'');
 });
-test('enrollment requires explicit valid date and program',()=>{
- for(const date of ['',undefined,'2026-02-30','invalid'])assert.throws(()=>confirmEnrollment({},'IHSS',date),/valid enrollment date/);
- assert.throws(()=>confirmEnrollment({},'  ','2026-11-12'),/Program/);
+test('official completed export becomes In Process, number becomes Enrolled',()=>{
+ assert.equal(getCaseStatus(ready),'Draft');
+ assert.throws(()=>recordApplicationNumber(ready,'123'),/export/);
+ assert.throws(()=>recordSuccessfulExport(ready,{artifactId:'review',completed:true,official:false}),/official/);
+ const exported=recordSuccessfulExport(ready,{artifactId:'pdf',completed:true,official:true});
+ assert.equal(getCaseStatus(exported),'In Process');
+ const enrolled=recordApplicationNumber(exported,' 123 ');
+ assert.equal(getCaseStatus(enrolled),'Enrolled');assert.equal(enrolled.applicationNumber,'123');
+ assert.throws(()=>recordApplicationNumber(enrolled,''),/retain/);
+});
+test('Case package contains actual copied bytes and fails on missing content',async()=>{
+ const record={id:'test',attachments:[{name:'id.txt',blobKey:'copy',evidence:{B:['ID']}}]};
+ const blob=await buildCasePackage(record,async()=>new Blob(['independent copy']));
+ const text=await blob.text();assert.ok(text.includes('independent copy'));assert.ok(text.includes('manifest.json'));
+ await assert.rejects(()=>buildCasePackage(record,async()=>null),/missing/);
 });

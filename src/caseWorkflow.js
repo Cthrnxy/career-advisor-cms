@@ -27,7 +27,7 @@ export function getCurrentFollowup(record,now=new Date()){
   return {index,round:index+1,start,overdue:date>=new Date(start.getFullYear(),start.getMonth()+3,1)};
 }
 export function getCaseStatus(record){
-  if(!record?.enrolled)return 'Draft';
+  if(!record?.enrolled)return record?.exportedAt?'In Process':'Draft';
   if(!record?.exit?.date)return 'Enrolled';
   const index=firstIncompleteFollowup(record);
   return index===-1?'Complete':'Follow-up '+(index+1);

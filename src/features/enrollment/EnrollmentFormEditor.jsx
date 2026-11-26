@@ -1,3 +1,4 @@
+import {caseReadiness,evidenceValues} from '../case/caseFiles.js';
 import React, {useMemo, useState} from 'react';
 import {EDITOR_PAGES, MAPPED_PAGES, LIST_A, LIST_B, LIST_C, SELECTIVE_REGISTERED, SELECTIVE_EXEMPT, ELIGIBILITY_OPTIONS, UC_STATUS, LAYOFF_CATEGORY, isDwGeneral, isDwSpecial, enrollmentIssues} from './formEditorRules.js';
 import './formEditor.css';
@@ -12,7 +13,7 @@ function initialValues(record, client) {
     phone: client.phone || '', email: client.email || '',
     address: [client.address,client.unit].filter(Boolean).join(', '),city:client.city||'',state:client.state||'',zip:client.zip||'',
     applicationDate: record.applicationDate || '', applicationNumber: record.applicationNumber || '',
-    agency: 'SHE', ...((record.fields || {}).enrollmentEditor || {})
+    agency: 'SHE', ...((record.fields || {}).enrollmentEditor || {}),...(record.attachments?.length?evidenceValues(record.attachments):{})
   };
 }
 function Field({id, label, value, onChange, type='text', placeholder='', help, issue, onFocus}) {
@@ -88,7 +89,7 @@ function PaperPreview({page,values,focus}) {
   </div>;
 }
 export default function EnrollmentFormEditor({record, client, onChange, onSave}) {
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(()=>Number(localStorage.getItem('case-page-'+record.id))||1);
   const [checked, setChecked] = useState({});
   const [showPreview, setShowPreview] = useState(true);
   const [previewZoom, setPreviewZoom] = useState(100);
@@ -109,12 +110,12 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
   const values = initialValues(record,client);
   const issueByPage = useMemo(()=>Object.fromEntries(
     Array.from({length:MAPPED_PAGES},(_,i)=>[i+1,enrollmentIssues(values,i+1)])
-  ),[record.fields,record.applicationDate,record.applicationNumber,client.name,client.phone,client.email]);
+  ),[record.fields,record.attachments,record.applicationDate,record.applicationNumber,client.name,client.phone,client.email]);
   const issues = (issueByPage[page] || []);
   const visibleIssues = checked[page] ? issues : [];
   const issue = key => visibleIssues.find(item=>item.key===key);
   const update = (key,value) => onChange({...values,[key]:value});
-  const goPage = number => {setPage(Math.max(1,Math.min(12,number)));setFocus('');};
+  const goPage = number => {setPage(Math.max(1,Math.min(12,number)));localStorage.setItem('case-page-'+record.id,String(number));setFocus('');};
   const checkPage = () => setChecked(prev=>({...prev,[page]:true}));
   const reviewAll = () => {
     setChecked(Object.fromEntries(Array.from({length:MAPPED_PAGES},(_,i)=>[i+1,true])));
@@ -126,6 +127,7 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
     setExportModal(true);
   };
   const confirmExport = () => {
+    if(allIssues.length||caseReadiness(record).length||MAPPED_PAGES<EDITOR_PAGES.length){setExportNotice('Export blocked: complete all required pages, evidence and signatures first.');return;}
     const html = buildEnrollmentReviewHtml({
       clientName:client.name, applicationNumber:values.applicationNumber, values,
       issues:allIssues, pendingPages:EDITOR_PAGES.slice(MAPPED_PAGES)
@@ -153,7 +155,7 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
           <div className="ef-review-overview"><strong>{allIssues.length} items found on mapped pages</strong><p>Review the list below. Pages 6–12 are still awaiting field mapping, so this prototype cannot confirm the entire 201 application is ready for enrollment.</p></div>
           {allIssues.length?allIssues.map((item,i)=><button type="button" className="ef-review-issue" key={item.page+'-'+item.key+'-'+i} onClick={()=>{goPage(item.page);setReviewMode(false)}}><span>Page {item.page}</span><strong>{item.label}</strong><small>{item.message}</small><b>›</b></button>):<p className="ef-review-clear">No issues detected on the five mapped pages.</p>}
           <div className="ef-review-pending"><strong>Pages needing implementation</strong><p>{EDITOR_PAGES.slice(MAPPED_PAGES).map((x,i)=>'Page '+(i+MAPPED_PAGES+1)+' · '+x).join(', ')}</p></div>
-          <div className="ef-review-foot"><button className="ef-btn" onClick={()=>setReviewMode(false)}>Continue Editing</button><button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enrollment ↗</button></div>
+          <div className="ef-review-foot"><button className="ef-btn" onClick={()=>setReviewMode(false)}>Continue Editing</button><button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enroll</button></div>
         </div>}
         {!reviewMode&&page===1&&<div className="ef-question-groups">
           <section className="ef-question-block"><div className="ef-question-heading"><span>I</span><div><h4>US Work Authorization</h4><p>Original List A OR List B + List C. Select the evidence being used.</p></div></div>
@@ -258,7 +260,7 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
   return <div className="ef-app">
     <div className="ef-toolbar">
       <div><h2>201 Master Application</h2></div>
-      <div className="ef-toolbar-actions"><span className="ef-autosave">● Browser draft</span><button className="ef-btn" onClick={onSave}>Save Draft</button>{reviewMode?<button className="ef-btn ef-btn-primary" onClick={()=>setReviewMode(false)}>Continue Editing</button>:<button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enrollment ↗</button>}</div>
+      <div className="ef-toolbar-actions"><span className="ef-autosave">● Browser draft</span><button className="ef-btn" onClick={onSave}>Save Draft</button><button className="ef-btn" onClick={reviewAll}>Check Form</button>{reviewMode?<button className="ef-btn ef-btn-primary" onClick={()=>setReviewMode(false)}>Continue Editing</button>:<button className="ef-btn ef-btn-primary" onClick={beginExport}>Export for Enroll</button>}</div>
     </div>
     <div className={'ef-layout'+(railCollapsed?' ef-rail-collapsed':'')+(floating.form?' ef-form-popped':'')+(floating.preview&&showPreview?' ef-preview-popped':'')}>
       <aside className="ef-rail">
@@ -284,8 +286,8 @@ export default function EnrollmentFormEditor({record, client, onChange, onSave})
         <p className="ef-review-info">We found <strong>{allIssues.length} possible missing or incorrect answers</strong> on the five mapped pages. Please review them before using this form for enrollment.</p>
         <div className="ef-export-stats"><div><strong>{allIssues.filter(x=>x.severity==='missing').length}</strong><span>Missing</span></div><div><strong>{allIssues.filter(x=>x.severity==='error').length}</strong><span>Possible errors</span></div><div><strong>{EDITOR_PAGES.length-MAPPED_PAGES}</strong><span>Pages not mapped</span></div></div>
         {allIssues.length>0&&<div className="ef-export-summary">{allIssues.slice(0,4).map((x,i)=><p key={x.key+i}><strong>Page {x.page} · {x.label}</strong><span>{x.message}</span></p>)}{allIssues.length>4&&<small>And {allIssues.length-4} more items…</small>}</div>}
-        <div className="ef-export-caveat"><strong>Prototype export only</strong><p>Confirm Export opens a printable review copy that can be saved as PDF. It is not the official OEWD 201 application. Exporting does not mark the Case Enrolled or submit anything, and pages 5–12 still need mapping.</p></div>
-        <div className="ef-export-actions"><button className="ef-btn" onClick={()=>setExportModal(false)}>Cancel</button><button className="ef-btn" onClick={reviewAll}>Review Issues</button><button className="ef-btn ef-btn-primary" onClick={confirmExport}>Confirm Export ↗</button></div>
+        <div className="ef-export-caveat"><strong>Official export is not available yet</strong><p>Pages 6–12 and official PDF export must be implemented before an application can be exported and become In Process. A review copy does not count as a successful enrollment export.</p></div>
+        <p>Missing Case evidence: {caseReadiness(record).join(', ')||'None'}</p><div className="ef-export-actions"><button className="ef-btn" onClick={()=>setExportModal(false)}>Cancel</button><button className="ef-btn" onClick={reviewAll}>Review Issues</button><button className="ef-btn ef-btn-primary" disabled={Boolean(allIssues.length||caseReadiness(record).length||MAPPED_PAGES<EDITOR_PAGES.length)} onClick={confirmExport}>Confirm Export</button></div>
       </div>
     </div>}
     {exportNotice&&<div className="ef-export-notice" role="status">{exportNotice} <button type="button" onClick={()=>setExportNotice('')}>Dismiss</button></div>}

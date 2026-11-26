@@ -12,6 +12,8 @@ export default function HomeDashboard({clients,onOpenClient,onOpenCase,onSearch,
  const homepageAppointments=listAppointments(clients).filter(a=>!a.completed&&a.date>=dateKey());
  const homepageTodos=calendarTasks(clients).filter(t=>t.dueDate?t.dueDate<=dateKey():!t.date||t.date<=dateKey());
  const suggestions=useMemo(()=>search.trim()?clients.filter(c=>searchText(c).includes(search.trim().toLowerCase())).slice(0,6):[],[clients,search]);
+ const [allProcessing,setAllProcessing]=useState(false);
+ const processing=clients.flatMap(client=>(client.cases||[]).filter(record=>record.exportedAt&&!record.enrolled).map(record=>({client,record})));
  const enrolled=useMemo(()=>enrolledCases(clients),[clients]);
  const followups=dueFollowupCases(clients);
  const ready=clients.filter(c=>c.status==='Ready for Enroll').length;
@@ -43,6 +45,8 @@ export default function HomeDashboard({clients,onOpenClient,onOpenCase,onSearch,
    </section>
    </React.Fragment>,
    enrolled:<React.Fragment>
+  <section className="home-panel"><div className="home-panelhead"><h3>In Process ({processing.length})</h3>{processing.length>5&&<button onClick={()=>setAllProcessing(v=>!v)}>{allProcessing?'Show less':'View all'}</button>}</div>{processing.length?processing.slice(0,allProcessing?undefined:5).map(({client,record})=><div className="home-task" key={record.id}><span>{client.name} · {record.form} · {record.program||'—'}</span><button onClick={()=>onOpenCase(record,client.id)}>Add Application Number</button></div>):<p className="home-empty">Exported applications waiting for an application number appear here.</p>}</section>
+
   <section className="home-panel home-enrolled">
    <div className="home-panelhead"><h3>▤ &nbsp; Enrolled (Not Exited) &nbsp; ({enrolled.length})</h3><button onClick={onEnrolled}>View All &nbsp; ›</button></div>
    <div className="home-table-scroll"><table><thead><tr><th>Client Name</th><th>Program</th><th>Form Type</th><th>Enrollment Date</th><th>Last Activity</th><th>Days Enrolled</th><th></th></tr></thead><tbody>
