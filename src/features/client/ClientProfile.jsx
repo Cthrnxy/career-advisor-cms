@@ -1,25 +1,18 @@
 import React,{useState} from 'react';
-import {DOCUMENT_TYPES,getStatus} from '../../data.js';
+import {getStatus} from '../../data.js';
 import './client.css';
+import ClientFiles from '../documents/ClientFiles.jsx';
 
 const visible=v=>v||'—';
 const asDate=v=>v?new Date(v+'T12:00:00').toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}):'—';
 function Meta({label,value}){return <div className="client-meta"><span>{label}</span><strong>{visible(value)}</strong></div>}
 function Field({label,value,onChange}){return <label className="client-field"><span>{label}</span><input value={value||''} onChange={e=>onChange(e.target.value)}/></label>}
-export default function ClientProfile({client,editing,profile,onProfileChange,onEdit,onCancel,onSave,onNewCase,onOpenCase,onUpload,onAddVisit,onEditVisit,onDeleteVisit,onNewAppointment,onOpenAppointment}){
- const docs=client.docs||[], cases=client.cases||[];
+export default function ClientProfile({client,editing,profile,onProfileChange,onEdit,onCancel,onSave,onNewCase,onOpenCase,onUpdateClient,onViewDocuments,onAddVisit,onEditVisit,onDeleteVisit,onNewAppointment,onOpenAppointment}){
+ const cases=client.cases||[];
  const initials=client.name.trim().split(/\s+/).slice(0,2).map(x=>x[0]?.toUpperCase()).join('');
- const docRows=DOCUMENT_TYPES.filter(kind=>!kind.includes('Signature'));
- const signatures=DOCUMENT_TYPES.filter(kind=>kind.includes('Signature'));
  const [allVisits,setAllVisits]=useState(false);
  const visits=(client.visits||[]).map((v,index)=>({...v,index})).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.index-a.index);
  const appointments=[...(client.appointments||[])].sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
- const followupDocs=docs.filter(d=>(d.kind||'').startsWith('Follow-up'));
- const FileRow=({kind})=>{const file=docs.filter(d=>d.kind===kind).at(-1);return <div className="client-doc-row">
-   <div className={'client-doc-icon '+(file?'is-present':'')}>{file?'✓':'▤'}</div>
-   <div className="client-doc-text"><strong>{kind}</strong><span title={file?.name}>{file?.name||'Not uploaded'}</span></div>
-   <button type="button" className="client-doc-action" onClick={()=>onUpload(kind)}>{file?'Replace':'Upload'}</button>
- </div>};
  return <div className="client-v2">
   <header className="client-hero">
     <div className="client-ident"><div className="client-avatar">{initials||'C'}</div><div><span className="client-eyebrow">CLIENT PROFILE · {client.id}</span><h1>{client.name}</h1><div className="client-chiprow"><span className="client-chip">{client.status||'Job Searching'}</span>{client.program&&<span className="client-chip alt">{client.program}</span>}</div></div></div>
@@ -39,18 +32,7 @@ export default function ClientProfile({client,editing,profile,onProfileChange,on
           </tr>):<tr><td colSpan="6"><div className="client-empty">No Enrollment Cases yet. Use Start New Enrollment to create one.</div></td></tr>}
         </tbody></table></div>
       </section>
-  <div className="client-pair client-files-pair">
-      <section className="client-section">
-        <div className="client-section-title"><div><h2>Documents on File</h2><p>All client documents in one place</p></div><span className="client-count">{docs.length}</span></div>
-        {docRows.map(kind=><FileRow key={kind} kind={kind}/>)}
-        {followupDocs.length>0&&<div className="client-other-docs"><strong>Follow-up Files</strong>{followupDocs.map((d,i)=><span key={i}>▤ &nbsp;{d.name}</span>)}</div>}
-        <p className="client-file-note">Prototype: only filenames are stored in your browser, not real document contents.</p>
-      </section>
-      <section className="client-section">
-        <div className="client-section-title"><div><h2>Signatures</h2><p>Client and employer signature files</p></div></div>
-        {signatures.map(kind=><FileRow key={kind} kind={kind}/>)}
-      </section>
-  </div>
+  <ClientFiles key={client.id} client={client} onUpdate={onUpdateClient} onViewMore={onViewDocuments}/>
   <div className="client-pair client-services-pair">
       <section className="client-section">
         <div className="client-section-title"><h2>Appointments</h2><button className="client-text-button" onClick={onNewAppointment}>+ New Appointment</button></div>

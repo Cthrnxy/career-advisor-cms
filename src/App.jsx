@@ -6,6 +6,7 @@ import EnrollmentFormEditor from './features/enrollment/EnrollmentFormEditor.jsx
 import HomeDashboard from './features/home/HomeDashboard.jsx';
 import CaseList from './features/home/CaseList.jsx';
 import ClientProfile from './features/client/ClientProfile.jsx';
+import ClientFiles from './features/documents/ClientFiles.jsx';
 import {followupCount} from './caseWorkflow.js';
 import HomepageSettings from './features/settings/HomepageSettings.jsx';
 import {DEFAULT_HOME_SETTINGS,normalizeHomeSettings} from './homeSettings.js';
@@ -129,7 +130,7 @@ const availableFollowupFiles=(client.docs||[]).filter(d=>{
 const selectFile=(file)=>{setFields(f=>({...f,evidence:file}));setModal('Exit')};
 const openSearchResults=value=>{if(switchView('Clients')){setQuery(value);setClientListFilter('All')}};
 const openExited=()=>switchView('Exited Cases');
-const pageTitle=screen==='Client Detail'?client.name:screen==='Case Detail'?current?.form+' Case Detail':screen==='Form Editor'?current?.form+' Form Editor':screen;
+const pageTitle=screen==='Documents'?client.name+' · Documents':screen==='Client Detail'?client.name:screen==='Case Detail'?current?.form+' Case Detail':screen==='Form Editor'?current?.form+' Form Editor':screen;
 const casesForTable=(list)=> <div className="table-scroll"><table><thead><tr><th>Client</th><th>Form</th><th>App Date</th><th>App Number</th><th>Case Status</th><th>Action</th></tr></thead><tbody>{list.map(({c,r})=><tr key={c.id+r.id} onDoubleClick={()=>openCase(r,c.id)}><td>{c.name}</td><td>{r.form}</td><td>{r.applicationDate||'—'}</td><td>{r.applicationNumber||'—'}</td><td><span className="status">{getStatus(r)}</span></td><td><Button onClick={()=>openCase(r,c.id)}>Open</Button></td></tr>)}</tbody></table></div>;
 return <div className="shell">
 <aside className={'sidebar '+(sidebarCollapsed?'collapsed':'')}>
@@ -151,11 +152,12 @@ return <div className="shell">
 {screen==='Clients'&&<Card title={clientListFilter==='Exited'?'Exited Clients':'All Clients'}>{clients.filter(c=> (clientListFilter!=='Exited'||c.cases.some(r=>getStatus(r)==='Exited')) && (!query.trim()||(c.name+' '+c.id+' '+(c.phone||'')+' '+c.cases.map(r=>r.applicationNumber).join(' ')).toLowerCase().includes(query.toLowerCase()))).map(c=><div key={c.id} className="item" onClick={()=>openClient(c.id)}>{c.name} · {c.id}<span>Open →</span></div>)}</Card>}
 {screen==='Calendar'&&<CalendarPage clients={clients} onNew={date=>setAppointmentSelection({date})} onOpen={(id,a)=>setAppointmentSelection({clientId:id,appointment:a})} onCase={openCase} onSchedule={(task,date)=>changeClient(task.clientId,c=>({...c,cases:c.cases.map(r=>r.id===task.record.id?{...r,taskSchedule:{...(r.taskSchedule||{}),[task.taskKey]:date}}:r)}))}/>}
 {screen==='Settings'&&<HomepageSettings value={homeSettings} onChange={setHomeSettings} onGoHome={()=>switchView('Home')}/>}
+{screen==='Documents'&&<><button className="client-button" onClick={()=>switchView('Client Detail')}>Back to client profile</button><ClientFiles key={client.id} fullPage client={client} onUpdate={nextClient=>{const next=clients.map(c=>c.id===nextClient.id?nextClient:c);localStorage.setItem(STORE,JSON.stringify(next));setClients(next)}}/></>}
 {screen==='Client Detail'&&<ClientProfile key={client.id} client={client} editing={editing} profile={profile} onProfileChange={setProfile} onEdit={startProfile} onCancel={()=>setEditing(false)} onSave={()=>{
  if(!profile.name?.trim()){flash('Name is required');return;}
  changeClient(client.id,c=>({...c,name:profile.name,phone:profile.phone,email:profile.email,employment:profile.employment,status:profile.status,program:profile.program,address:profile.address||'',unit:profile.unit||'',city:profile.city||'',state:profile.state||'',zip:profile.zip||'',needs:profile.needs||''}));
  setEditing(false);flash('Profile saved locally');
-}} onNewCase={()=>show('New Enrollment')} onOpenCase={record=>openCase(record)} onUpload={kind=>{show('Client File');setFields({kind})}} onAddVisit={()=>show('Visit Note')}
+}} onViewDocuments={()=>switchView('Documents')} onNewCase={()=>show('New Enrollment')} onOpenCase={record=>openCase(record)} onUpdateClient={nextClient=>{const next=clients.map(c=>c.id===nextClient.id?nextClient:c);localStorage.setItem(STORE,JSON.stringify(next));setClients(next)}} onAddVisit={()=>show('Visit Note')}
  onEditVisit={index=>{show('Visit Note');setFields({...client.visits[index],visitIndex:index})}}
  onDeleteVisit={index=>{if(window.confirm('Delete this visit note?'))changeClient(client.id,c=>({...c,visits:c.visits.filter((_,i)=>i!==index)}))}}
  onNewAppointment={()=>setAppointmentSelection({clientId:client.id})} onOpenAppointment={a=>setAppointmentSelection({clientId:client.id,appointment:a})}/>}
