@@ -15,7 +15,7 @@ test('appointments without time sort before timed appointments across clients',(
 });
 test('calendar uses actual follow-up quarter and leaves review tasks undated',()=>{
  const tasks=calendarTasks([{id:'x',cases:[{id:'draft'},{id:'enrolled',enrolled:true},{id:'exited',enrolled:true,form:'999',exit:{date:'2026-11-25'},followups:[]}]}]);
- assert.deepEqual(tasks.map(t=>t.date),[null,null,null]);assert.equal(tasks[2].dueDate,'2027-01-01');
+ assert.ok(tasks.every(t=>t.date===null));assert.equal(tasks.find(t=>t.id==='exited').dueDate,'2027-01-01');assert.deepEqual(tasks.filter(t=>t.taskKey.startsWith('activity-')).map(t=>t.label),['Complete IEP','Complete Job Searching']);
 });
 test('month grid spans year boundaries with complete weeks',()=>{const days=monthDays(new Date(2027,0,1));assert.equal(days.length,42);assert.equal(days[0].getDay(),0);assert.equal(dateKey(days[0]),'2026-12-27');});
 

@@ -30,3 +30,15 @@ Validation: unit tests, editable PDF field readback, PDF page render inspection 
 - Current cross-form prefill covers mapped common answers (contact, household/income, and available legacy employment/language answers). Same-form 201 also copies non-date answer fields from its known schema. Full 999 demographic/education cross-mapping is pending its PDF field inventory.
 - Optional training-supplement selection is saved on 999 Cases. Main and training PDF editors/export are still pending; selection alone does not claim completion or permit export.
 - The original 999 main PDF exists in the source repository but its >1 MB binary contents are not returned by the connected Contents API; the smaller training PDF is retrievable. A usable main PDF is needed to complete exact fields and export.
+
+## Activity and Exit
+
+- Enrolled Cases derive pending IEP and first Job Searching tasks until the corresponding completed activities exist. These tasks appear in Case detail and the calendar; they do not create completed service entries automatically.
+- Activity stays separate from Profile Client Service and from other Cases. CA records type, completed date (default today, editable) and an optional note. The latest five display first, with View all, Edit and Delete.
+- 201 Exit requires completed IEP plus at least two Job Searching records. Other activities are permitted but cannot substitute. Editing or deleting an activity after Exit cannot invalidate these requirements; CA must explicitly Reopen Exit first.
+- 999 activity quantity remains undecided; no numerical threshold has been invented.
+- Exit drafts are stored in exitDraft separately, so a draft date does not trigger Follow-up or remove the Case from pending Exit.
+- Completion requires an enrolled Case, valid date, a supported outcome, actual Case-owned evidence and explicit CA reuse confirmation. Exit evidence can be EV, Paystub or employer signature (the undecided Paystub rule applies to 201 enrollment, not Exit).
+- Outcomes: Job Found, Training or Education, Unable to Contact, Other. Other requires explanatory text.
+- Completed Exit edits and reopening retain before/after snapshots and timestamps. Exit date changes and reopening flag Follow-up for review while preserving existing Follow-up records. This browser-local history does not provide authenticated staff attribution.
+- Browser interaction/visual QA remains unavailable. Unit checks cover requirements, state transitions, drafts, activity deletion/edit guards and preservation of Follow-up history.
