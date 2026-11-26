@@ -13,6 +13,10 @@ Confirmed design:
 
 Implemented: evidence classification on upload/edit, independent file/signature copies, Case uploads and attachment archive, auto evidence selections, export gates, In Process homepage module, application-number transition and last editor page persistence.
 
-Remaining: the current demo maps only pages 1–5 of the 201 form. Pages 6–12 and official PDF rendering/export are not implemented. Official Export remains blocked, and no UI path marks a draft In Process from a printable review copy or an attachments-only package. The tested successful-export state transition is ready for the official export integration. 999 export rules remain undecided.
+The 201 editor now maps all 573 widgets in the 12-page main application, preserves original field order and section labels, renders the actual PDF, and exports an editable PDF with independent Case attachments. The blank template was rebuilt from the user-provided PY 2026–27 copy with filled widget values removed; the original uploaded customer PDF is not a repository asset.
 
-The previously discussed unsaved-edit three-way dialog and Profile-field change review are still pending. The editor continues to store browser-local drafts. Browser interaction QA was unavailable due to the preview access policy; unit tests and production build were run.
+IEP continues to use the original form as a separate uploaded Case attachment. It is included unchanged in attachment/export packages, not appended to the 12-page 201 application. The IEP activity type remains available. No new IEP requirement or eligibility gate is introduced.
+
+The editor offers Save and Leave / Discard Changes / Continue Editing, and selective Profile-field change review. Required identity/evidence checks and implemented original consistency rules gate export; CA review of applicable fields is recorded for every page. This is not a claim that every original backend validation has been ported. Drafts and exported packages remain browser-local. 999 mapping/export rules remain pending.
+
+Validation: unit tests, editable PDF field readback, PDF page render inspection and production build. Browser interaction QA remains unavailable due to the preview access policy; navigation dialogs and layout still need an interactive review before release.

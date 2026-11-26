@@ -14,9 +14,9 @@ export const EDITOR_PAGES = [
   'Photo Release'
 ];
 export const MAPPED_PAGES = 5;
-export const LIST_A = ['U.S. Passport', 'Permanent Resident Card (I-551)', 'Employment Authorization Document (I-766)', 'Foreign passport with temporary I-551 stamp', 'Other List A document'];
-export const LIST_B = ["Valid Driver's License or ID Card", 'Federal, state or local government ID', 'School ID card with photograph', "Voter's Registration Card", 'Other List B document'];
-export const LIST_C = ['Unrestricted Social Security Card', 'Certification of Birth Abroad', 'Original or certified U.S. birth certificate', 'U.S. Citizen ID Card (I-197)', 'Other List C document'];
+export const LIST_A = ['U.S. Passport', 'Permanent Resident Card (I-551)', 'Employment Authorization Document (I-766)', 'Foreign passport with temporary I-551 stamp', 'Foreign passport with Form I-94 or I-94A', 'Passport from Micronesia or Marshall Islands with Form I-94'];
+export const LIST_B = ["Valid Driver's License or ID Card", 'Federal, state or local government ID', 'School ID card with photograph', "Voter's Registration Card", 'U.S. Military card or draft record', 'Military dependent ID card', 'U.S. Coast Guard Merchant Mariner card', 'Native American tribal document (List B)', 'Canadian driver license'];
+export const LIST_C = ['Unrestricted Social Security Card', 'Certification of Birth Abroad', 'Original or certified U.S. birth certificate', 'U.S. Citizen ID Card (I-197)', 'Native American tribal document (List C)', 'Resident Citizen ID Card (I-179)', 'DHS employment authorization document'];
 export const SELECTIVE_REGISTERED = ['SSS Internet Verification', 'Registration Acknowledgment Letter', 'Selective Service Registration Card', 'Selective Service Verification Form (Form 3A)', 'Stamped Post Office Receipt of Registration', 'Other registration evidence'];
 export const SELECTIVE_EXEMPT = ['Born Female', 'Male born on or before December 31, 1959', 'DD-214 (U.S. Military Discharge)', 'Non-U.S. male first entered the U.S. after age 26', 'Other exemption'];
 export const ELIGIBILITY_OPTIONS = [

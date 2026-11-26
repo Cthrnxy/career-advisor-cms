@@ -1,13 +1,13 @@
 import {fileStore} from './features/documents/fileStore.js';
 import {validateFile} from './features/documents/documentModel.js';
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useState,useRef} from 'react';
 import CaseAttachments from './features/case/CaseAttachments.jsx';
 import CaseSummary from './features/case/CaseSummary.jsx';
 import CalendarPage from './features/calendar/CalendarPage.jsx';
 import AppointmentPanel from './features/calendar/AppointmentPanel.jsx';
 import {completeAppointment} from './features/calendar/calendarModel.js';
 import FormSignatures from './features/enrollment/FormSignatures.jsx';
-import EnrollmentFormEditor from './features/enrollment/EnrollmentFormEditor.jsx';
+import Original201Editor from './features/enrollment/Original201Editor.jsx';
 import HomeDashboard from './features/home/HomeDashboard.jsx';
 import CaseList from './features/home/CaseList.jsx';
 import ClientProfile from './features/client/ClientProfile.jsx';
@@ -30,6 +30,10 @@ function Input({label,value,onChange,type='text',placeholder=''}){return <label 
 function FormRows({items}){return <div className="field-grid">{items.map(([k,v])=><Label key={k} text={k} value={v}/>)}</div>}
 function App(){
 const[clients,setClients]=useState(load);
+const formEditorRef=useRef(null),allowEditorLeave=useRef(false);
+const[pendingLeave,setPendingLeave]=useState(null);
+const[formDirty,setFormDirty]=useState(false);
+const deferEditorLeave=run=>{if(!allowEditorLeave.current&&formEditorRef.current?.isDirty()){setPendingLeave({run});return true}return false};
 const[showAllActivities,setShowAllActivities]=useState(false);
 const[homeSettings,setHomeSettings]=useState(loadHomeSettings);
 const[screen,setScreen]=useState('Home');
@@ -59,7 +63,7 @@ const client=clients.find(c=>c.id===clientId)||clients[0];
 const current=client.cases.find(c=>c.id===caseId);
 
 const ready=clients.filter(c=>c.status==='Ready for Enroll');
-const show=m=>{setCaseUpload(null);setModal(m);setFields(['Visit Note','New Client','New Appointment'].includes(m)?{date:today()}:{});setDocumentName('')};
+const show=m=>{if(m==='New Client'&&deferEditorLeave(()=>show(m)))return;setCaseUpload(null);setModal(m);setFields(['Visit Note','New Client','New Appointment'].includes(m)?{date:today()}:{});setDocumentName('')};
 const flash=m=>{setMessage(m);setTimeout(()=>setMessage(''),3500)};
 const changeClient=(id,fn)=>setClients(arr=>arr.map(c=>c.id===id?fn(c):c));
 const changeCase=(fn)=>changeClient(client.id,c=>({...c,cases:c.cases.map(r=>r.id===caseId?fn(r):r)}));
@@ -68,6 +72,7 @@ const routeChanged=(nextScreen,nextClientId,nextCaseId)=>getRouteId(nextScreen,n
 const confirmLeave=()=>!hasUnsavedProfile()||window.confirm('You have unsaved changes in the client profile. Leave this page and discard those changes?');
 const switchView=(nextScreen,nextClientId=clientId,nextCaseId=caseId)=>{
   const changed=routeChanged(nextScreen,nextClientId,nextCaseId);
+  if(changed&&deferEditorLeave(()=>switchView(nextScreen,nextClientId,nextCaseId)))return false;
   if(changed&&!confirmLeave())return false;
   if(changed){
     setRouteHistory(history=>pushNavigationHistory(history,{screen,clientId,caseId}));
@@ -80,6 +85,7 @@ const switchView=(nextScreen,nextClientId=clientId,nextCaseId=caseId)=>{
   return true;
 };
 const goBack=()=>{
+  if(deferEditorLeave(goBack))return false;
   const last=routeHistory.at(-1);
   if(!last)return switchView('Home');
   if(!confirmLeave())return false;
@@ -166,7 +172,7 @@ return <div className="shell">
 </tbody></table></div>
 </Card></details></>}
 {screen==='Form Editor'&&current&&<FormSignatures key={current.id} client={client} record={current} onChange={changeCase} onManage={()=>openClient(client.id)}/>}
-{screen==='Form Editor'&&current&&(current.form==='201'?<EnrollmentFormEditor key={current.id} record={current} client={client} onChange={next=>changeCase(c=>({...c,applicationDate:next.applicationDate||'',applicationNumber:next.applicationNumber||'',fields:{...(c.fields||{}),enrollmentEditor:next}}))} onSave={()=>flash('201 Form draft saved in this browser')}/>:<div className="editor"><Card title="Editable Fields"><Input label="Application Date" value={current.applicationDate} onChange={v=>changeCase(c=>({...c,applicationDate:v}))}/><Input label="Application Number" value={current.applicationNumber} onChange={v=>changeCase(c=>({...c,applicationNumber:v}))}/><Input label="Client Name" value={client.name} onChange={()=>{}}/><p className="muted">Full 999 field mapping is planned. This demo saves locally.</p></Card><Card title="PDF Preview"><div className="pdf-placeholder"><b>999 Form</b><p>Actual PDF rendering and mapping will be connected in a later phase.</p></div></Card></div>)}
+{screen==='Form Editor'&&current&&(current.form==='201'?<Original201Editor ref={formEditorRef} key={current.id} record={current} client={client} onDirtyChange={setFormDirty} onSave={next=>{changeCase(()=>next);flash(next.exportedAt?'Export saved':'201 Form draft saved')}}/>:<div className="editor"><Card title="Editable Fields"><Input label="Application Date" value={current.applicationDate} onChange={v=>changeCase(c=>({...c,applicationDate:v}))}/><Input label="Application Number" value={current.applicationNumber} onChange={v=>changeCase(c=>({...c,applicationNumber:v}))}/><Input label="Client Name" value={client.name} onChange={()=>{}}/><p className="muted">Full 999 field mapping is planned. This demo saves locally.</p></Card><Card title="PDF Preview"><div className="pdf-placeholder"><b>999 Form</b><p>Actual PDF rendering and mapping will be connected in a later phase.</p></div></Card></div>)}
 </main></div>
 {modal&&<div className="backdrop" onClick={()=>setModal('')}><div className="dialog" onClick={e=>e.stopPropagation()}><div className="modal-head"><h2>{({ 'New Enrollment':'Start New Enrollment','Add Follow-up':'Record Follow-up','Client File':'Upload Client Document'})[modal]||modal}</h2><Button onClick={()=>setModal('')}>✕</Button></div>
 {modal==='New Enrollment'&&<><p>Select the form type for a new independent Draft Case.</p><label className="choice"><input type="radio" checked={formChoice==='201'} onChange={()=>setFormChoice('201')}/> 201 — WIOA Adult</label><label className="choice"><input type="radio" checked={formChoice==='999'} onChange={()=>setFormChoice('999')}/> 999 — General Fund</label><Input label="Program (required)" value={fields.program} onChange={v=>setFields(f=>({...f,program:v}))} placeholder="e.g. NJC / IHSS, HCA, Hospitality"/><p>Client details, documents and signatures stay available. Activities, Exit and Follow-ups start empty.</p><div className="right"><Button onClick={()=>setModal('')}>Cancel</Button><Button kind="primary" disabled={!fields.program?.trim()} onClick={createEnrollment}>Create Draft</Button></div></>}
@@ -193,6 +199,7 @@ return <div className="shell">
 
 </div></div>}
 {appointmentSelection&&<AppointmentPanel key={(appointmentSelection.appointment?.id||'new')+(appointmentSelection.clientId||'')} selection={appointmentSelection} clients={clients} onCreateClient={(name,phone)=>{const c={id:'CL-'+uid(),name,phone,email:'',employment:'Unknown',status:'Job Searching',needs:'',docs:[],appointments:[],visits:[],cases:[]};setClients(arr=>[...arr,c]);return c}} onClose={()=>setAppointmentSelection(null)} onSave={(draft)=>{changeClient(draft.clientId,c=>{const appointments=[...(c.appointments||[])];const index=appointments.findIndex(a=>a.id===draft.id);const entry={...(index>=0?appointments[index]:{}),id:draft.id||uid(),date:draft.date,time:draft.time,reason:draft.reason};if(index>=0)appointments[index]=entry;else appointments.push(entry);return {...c,appointments}});setAppointmentSelection(null);flash('Appointment saved')}} onDelete={(id,aid)=>{changeClient(id,c=>({...c,appointments:(c.appointments||[]).filter(a=>a.id!==aid)}));setAppointmentSelection(null);flash('Appointment deleted')}} onComplete={(id,aid,date,notes)=>{changeClient(id,c=>completeAppointment(c,aid,date,notes));setAppointmentSelection(null);flash('Appointment completed and service saved')}}/>}
+{pendingLeave&&<div className="backdrop"><section className="dialog" role="dialog" aria-modal="true" aria-label="Unsaved form changes"><h2>Unsaved Form Changes</h2><p>Save your changes before leaving this form?</p><div className="action-line"><Button onClick={()=>setPendingLeave(null)}>Continue Editing</Button><Button onClick={()=>{formEditorRef.current?.discard();const run=pendingLeave.run;setPendingLeave(null);allowEditorLeave.current=true;run();allowEditorLeave.current=false}}>Discard Changes</Button><Button kind="primary" onClick={()=>{formEditorRef.current?.save();const run=pendingLeave.run;setPendingLeave(null);allowEditorLeave.current=true;run();allowEditorLeave.current=false}}>Save and Leave</Button></div></section></div>}
 {message&&<div className="toast">{message}</div>}
 </div>
 }

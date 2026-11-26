@@ -8,9 +8,10 @@ export function tarHeader(name,size){
  bytes.fill(32,148,156);bytes[156]=48;put(257,'ustar\0',6);put(263,'00',2);
  const sum=bytes.reduce((a,b)=>a+b,0);put(148,sum.toString(8).padStart(6,'0')+'\0 ',8);return bytes;
 }
-export async function buildCasePackage(record,read=fileStore){
+export async function buildCasePackage(record,read=fileStore,applicationPdf=null){
  const files=[...(record.attachments||[]),...Object.values(record.signatureFiles||{}).filter(Boolean)];
  const chunks=[],manifest=[];
+ if(applicationPdf){chunks.push(tarHeader('application-201.pdf',applicationPdf.size),applicationPdf,new Uint8Array((512-applicationPdf.size%512)%512));}
  for(const [i,file] of files.entries()){
   if(!file.blobKey)throw new Error('An attachment has no file content. Replace it before packaging.');
   const blob=await read('get',file.blobKey);if(!blob)throw new Error('An attachment is missing in this browser.');
