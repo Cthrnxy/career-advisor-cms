@@ -21,10 +21,10 @@ function PdfPage({bytes,page,zoom}){
 const Original201Editor=forwardRef(function Original201Editor({record,client,onSave,onDirtyChange},ref){
  const initial=useRef(initialOriginalValues(record,client));
  const [draft,setDraft]=useState(initial.current),[reviewed,setReviewed]=useState(record.fields?.reviewed201||{}),[baseline,setBaseline]=useState(record.fields?.profile201||profileSnapshot(client));
- const saved=useRef(JSON.stringify({draft:initial.current,reviewed:record.fields?.reviewed201||{},baseline:record.fields?.profile201||profileSnapshot(client)}));
+ const [saved,setSaved]=useState(JSON.stringify({draft:initial.current,reviewed:record.fields?.reviewed201||{},baseline:record.fields?.profile201||profileSnapshot(client)}));
  const [page,setPage]=useState(()=>Math.max(1,Math.min(12,Number(localStorage.getItem('case-page-'+record.id))||1)));
  const [collapsed,setCollapsed]=useState(false),[checking,setChecking]=useState(false),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[bytes,setBytes]=useState(null),[zoom,setZoom]=useState(1),[floating,setFloating]=useState(false),[profileOpen,setProfileOpen]=useState(false),[selectedUpdates,setSelectedUpdates]=useState([]);
- const dirty=JSON.stringify({draft,reviewed,baseline})!==saved.current;
+ const dirty=JSON.stringify({draft,reviewed,baseline})!==saved;
  const values=useMemo(()=>automaticValues(draft,record),[draft,record.attachments,record.applicationNumber]);
  const issues=useMemo(()=>originalIssues(values,record,reviewed),[values,record.signatureFiles,record.attachments,reviewed]);
  const incoming=profileSnapshot(client),changedProfile=Object.keys(profileKeys).filter(key=>incoming[key]!==baseline[key]);
@@ -33,9 +33,9 @@ const Original201Editor=forwardRef(function Original201Editor({record,client,onS
  useEffect(()=>{if(lastVersion.current!==signatureVersion+evidenceVersion){setReviewed({});lastVersion.current=signatureVersion+evidenceVersion}},[signatureVersion,evidenceVersion]);
  useEffect(()=>{onDirtyChange?.(dirty)},[dirty,onDirtyChange]);
  useEffect(()=>{const warn=e=>{if(dirty){e.preventDefault();e.returnValue=''}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[dirty]);
- useEffect(()=>{let current=true;const timer=setTimeout(()=>{fillOriginal201(values,record).then(data=>{if(current)setBytes(data)}).catch(e=>{if(current)setNotice('PDF preview: '+e.message)})},350);return()=>{current=false;clearTimeout(timer)}},[values,signatureVersion]);
- const save=()=>{const fields={...record.fields,original201:draft,reviewed201:reviewed,profile201:baseline};onSave({...record,fields,applicationDate:draft.p3w5||record.applicationDate||''});saved.current=JSON.stringify({draft,reviewed,baseline});onDirtyChange?.(false);setNotice('Draft saved.');};
- useImperativeHandle(ref,()=>({isDirty:()=>dirty,save,discard:()=>{const old=JSON.parse(saved.current);setDraft(old.draft);setReviewed(old.reviewed);setBaseline(old.baseline);onDirtyChange?.(false)}}));
+ useEffect(()=>{let current=true;const timer=setTimeout(()=>{fillOriginal201(values,record).then(data=>{if(current)setBytes(data)}).catch(e=>{if(current){setBytes(null);setNotice('PDF preview: '+e.message)}})},350);return()=>{current=false;clearTimeout(timer)}},[values,signatureVersion]);
+ const save=()=>{const fields={...record.fields,original201:draft,reviewed201:reviewed,profile201:baseline};onSave({...record,fields,applicationDate:draft.p3w5||record.applicationDate||''});setSaved(JSON.stringify({draft,reviewed,baseline}));onDirtyChange?.(false);setNotice('Draft saved.');};
+ useImperativeHandle(ref,()=>({isDirty:()=>dirty,save,discard:()=>{const old=JSON.parse(saved);setDraft(old.draft);setReviewed(old.reviewed);setBaseline(old.baseline);onDirtyChange?.(false)}}));
  const go=number=>{setPage(number);localStorage.setItem('case-page-'+record.id,String(number))};
  const setValue=(field,value)=>{setDraft(v=>updateOriginal(v,field,value));setReviewed({});};
  const jump=issue=>{go(issue.page);setTimeout(()=>document.getElementById('original-'+issue.key)?.focus(),0)};
@@ -44,7 +44,7 @@ const Original201Editor=forwardRef(function Original201Editor({record,client,onS
   try{const pdfBytes=await fillOriginal201(values,record);const pdf=new Blob([pdfBytes],{type:'application/pdf'});const packet=await buildCasePackage(record,fileStore,pdf);artifactId=crypto.randomUUID();await fileStore('put',artifactId,packet);
    const next=recordSuccessfulExport({...record,fields:{...record.fields,original201:draft,reviewed201:reviewed,profile201:baseline},applicationDate:draft.p3w5||record.applicationDate||''},{artifactId,completed:true,official:true});
    const url=URL.createObjectURL(packet),link=document.createElement('a');link.href=url;link.download=`201-${record.id}-enrollment.tar`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-   onSave(next);saved.current=JSON.stringify({draft,reviewed,baseline});onDirtyChange?.(false);setNotice('Export package created and saved. Case is In Process until an Application Number is added.');
+   onSave(next);setSaved(JSON.stringify({draft,reviewed,baseline}));onDirtyChange?.(false);setNotice('Export package created and saved. Case is In Process until an Application Number is added.');
   }catch(e){if(artifactId)await fileStore('delete',artifactId).catch(()=>{});setNotice('Export failed: '+e.message)}finally{setBusy(false)}
  };
  const pageFields=schema.fields.filter(f=>f.page===page);const sections=[...new Set(pageFields.map(f=>f.section))];

@@ -19,7 +19,7 @@ export async function buildCasePackage(record,read=fileStore,applicationPdf=null
   chunks.push(tarHeader(name,blob.size),blob,new Uint8Array((512-blob.size%512)%512));
   manifest.push({path:name,title:file.title||file.kind,evidence:file.evidence||{}});
  }
- const json=new Blob([JSON.stringify({caseId:record.id,form:record.form,applicationNumber:record.applicationNumber,files:manifest},null,2)]);
+ const json=new Blob([JSON.stringify({caseId:record.id,form:record.form,applicationNumber:record.applicationNumber,evidenceAssignments:record.evidenceAssignments||{},files:manifest},null,2)]);
  chunks.push(tarHeader('manifest.json',json.size),json,new Uint8Array((512-json.size%512)%512),new Uint8Array(1024));
  return new Blob(chunks,{type:'application/x-tar'});
 }

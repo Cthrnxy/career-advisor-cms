@@ -6,7 +6,7 @@ import {buildCasePackage} from '../src/features/case/packageFiles.js';
 import {getCaseStatus} from '../src/caseWorkflow.js';
 const signatures={'Client Signature':{blobKey:'client'},'Employer Signature':{blobKey:'employer'}};
 const ready={form:'201',attachments:[{blobKey:'a',evidence:{A:['Passport']}}],signatureFiles:signatures};
-test('201 requires A or B+C and both signature copies',()=>{
+test('201 accepts A or B+C with client and employer signature copies',()=>{
  assert.deepEqual(caseReadiness(ready),[]);
  assert.deepEqual(caseReadiness({...ready,attachments:[{blobKey:'bc',evidence:{B:['ID'],C:['SSN']}}]}),[]);
  assert.ok(caseReadiness({...ready,attachments:[{blobKey:'b',evidence:{B:['ID']}}]}).length);

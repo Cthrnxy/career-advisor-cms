@@ -17,7 +17,7 @@ export function initialOriginalValues(record,client){
  next.p3w1=old.agency||'SHE';next.p3w5=old.applicationDate||record.applicationDate||'';next.p8w4=next.p3w5;
  next.p3w6=record.applicationNumber||'';next.p8w5=next.p3w6;
  const eligibility={income:'p2w1',benefits:'p2w5',homeless:'p2w10',skills:'p2w11'};if(eligibility[old.adultEligibility])next[eligibility[old.adultEligibility]]=true;
- return next;
+ return {...next,...record.fields?.prefill201};
 }
 export const evidenceMap={
  'U.S. Passport':'p1w4','Permanent Resident Card (I-551)':'p1w5','Foreign passport with temporary I-551 stamp':'p1w6','Employment Authorization Document (I-766)':'p1w7',

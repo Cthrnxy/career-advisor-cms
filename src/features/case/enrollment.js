@@ -7,6 +7,6 @@ export function recordApplicationNumber(record,applicationNumber){
 }
 export function recordSuccessfulExport(record,{artifactId,completed,official},now=new Date().toISOString()){
  if(!artifactId||!completed||!official)throw new Error('A completed official application export is required.');
- if(String(record.form)==='201'&&caseReadiness(record).length)throw new Error('Case evidence and signatures are incomplete.');
+ if(['201','999'].includes(String(record.form))&&caseReadiness(record).length)throw new Error('Case evidence and signatures are incomplete.');
  return {...record,exportedAt:now,exportArtifactId:artifactId};
 }
